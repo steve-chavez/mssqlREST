@@ -19,9 +19,14 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
     Table -> Obtain metadata from DB(datatypes) with Table -> Map ResultSet to Java Datatypes 
     -> Convert to JSON -> Send JSON through HTTP Response 
 
+    Table -> Obtain metadata from DB with Table(columns and types) -> Map this to java classes ->
+    Build query with Table and java classes -> Prepare statement -> Construct JSON from ResultSet with Java classes -> HTTP Response JSON
+
 ### POST :
 
     Table and posted data in JSON -> Obtain metadata from DB(datatypes) with Table 
     -> Map JSON posted data to Java datatypes matching DB datatypes 
     -> Insert to DB -> Send result through HTTP Response
 
+    Table and posted JSON -> Obtain metadata from DB with Table(columns and types) -> Map this to java classes ->
+    Build query with java classes and JSON -> Prepare statement -> HTTP Response Result JSON

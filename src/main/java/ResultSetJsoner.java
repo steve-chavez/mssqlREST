@@ -63,7 +63,7 @@ public class ResultSetJsoner {
                         obj.put(columnName, rs.getDate(columnName));
                         break;
                     default:
-                    obj.put(columnName, rs.getObject(columnName));
+                        obj.put(columnName, rs.getObject(columnName));
                         break;
                 }
             }

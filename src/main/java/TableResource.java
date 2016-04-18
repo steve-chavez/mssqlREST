@@ -11,7 +11,7 @@ public class TableResource{
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{table}")
     public Response getTrabajadores(@PathParam("table") String table) {
-        return Response.ok(tableDAO.queryTable(table).toString()).build();
+        return Response.ok(tableDAO.selectFrom(table).toString()).build();
     }
 }
 
