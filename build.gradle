@@ -14,16 +14,10 @@ dependencies {
        'org.json:json:20160212',
        //**SQL
        files('./sqljdbc4.jar'),
-       //'postgresql:postgresql:+',
        'com.healthmarketscience.common:common-util:1.0.0',
        'com.healthmarketscience.sqlbuilder:sqlbuilder:2.1.2',
        //**HTTP
-       'org.glassfish.jersey.core:jersey-server:2.7',
-       'org.glassfish.jersey.containers:jersey-container-servlet-core:2.7',
-       'org.glassfish.jersey.containers:jersey-container-jetty-http:2.7',
-       'org.glassfish.jersey.media:jersey-media-moxy:2.7',
-       'org.eclipse.jetty:jetty-server:+',
-       'org.eclipse.jetty:jetty-servlet:+'
+       'com.sparkjava:spark-core:2.3'
    )
 }
 

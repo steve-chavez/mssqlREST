@@ -1,15 +1,16 @@
 
-import org.eclipse.jetty.server.*;
-import org.eclipse.jetty.servlet.*;
+import spark.*;
 
-public class ApplicationServer{
+public class ApplicationServer {
 
-    public static void main(String[] args) throws Exception{
-        Server server = new Server(8080);
-        ServletContextHandler handler = new ServletContextHandler(server, "/");
-        ServletHolder jerseyServlet = handler.addServlet(org.glassfish.jersey.servlet.ServletContainer.class, "/api/*");
-        jerseyServlet.setInitParameter("jersey.config.server.provider.classnames", TableResource.class.getCanonicalName());
-        server.start();
+    public static void main(String[] args) {
+        TableDAO tableDAO = new TableDAO();
+        Spark.port(8080); 
+        Spark.get("/:table", (request, response) -> {
+            response.status(200);
+            response.type("application/json");
+            return tableDAO.selectFrom(request.params(":table")).toString();
+        });
     }
 }
 
