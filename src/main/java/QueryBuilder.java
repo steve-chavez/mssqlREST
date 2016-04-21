@@ -20,7 +20,7 @@ public class QueryBuilder{
             .validate().toString();
     }
 
-    public static String insertQuery(Table table){
+    public static String insertQuery(Table table, Map<String, String> values){
         DbSpec builderSpec = new DbSpec();
         DbSchema builderSchema = builderSpec.addDefaultSchema();
         DbTable builderTable = builderSchema.addTable(table.name);
@@ -28,8 +28,14 @@ public class QueryBuilder{
         for (Map.Entry<String, String> entry : table.columns.entrySet()) {
             builderTable.addColumn(entry.getKey(), entry.getValue(), null);
         }
-        return new SelectQuery()
-            .addAllTableColumns(builderTable)
-            .validate().toString();
+
+        InsertQuery query = new InsertQuery(builderTable);
+
+        for (Map.Entry<String, String> entry : values.entrySet()) {
+            query.addColumn( builderTable.findColumn(entry.getKey()), entry.getValue());
+        }
+
+        return query.validate().toString();
     }
+
 }
