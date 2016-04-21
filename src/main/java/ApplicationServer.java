@@ -8,14 +8,24 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.Gson;
 
 import java.util.*;
+import java.io.*;
+import org.yaml.snakeyaml.*;
 
 public class ApplicationServer {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FileNotFoundException{
 
-        TableDAO tableDAO = new TableDAO();
+        
+		Yaml yaml = new Yaml();
+	
+		Map<String, Object> vals = (Map<String, Object>) yaml
+				.load(new FileInputStream(new File("config.yml")));
 
-        Spark.port(8080); 
+        TableDAO tableDAO = new TableDAO(
+            vals.get("url").toString(), vals.get("user").toString(), vals.get("password").toString()
+        );
+
+        Spark.port((Integer)vals.get("port")); 
 
         Spark.get("/:table", (request, response) -> {
             response.status(200);

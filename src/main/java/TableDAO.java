@@ -11,9 +11,15 @@ import java.util.*;
 
 public class TableDAO{
 
-    private String url = "jdbc:sqlserver://rrhh.database.windows.net:1433;database=RRHH;encrypt=true;trustServerCertificate=false;hostNameInCertificate=eastus1-a.control.database.windows.net;loginTimeout=30;";
-    private String user = "stevebash";
-    private String password = "1qaz\"WSX";
+    private String url;
+    private String user;
+    private String password;
+
+    public TableDAO(String url, String user, String password){
+        this.url = url;
+        this.user = user;
+        this.password = password;
+    }
     
     public JSONArray selectFrom(String tableName){
         Table table = this.getMetaData(tableName);
