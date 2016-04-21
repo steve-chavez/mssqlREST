@@ -57,6 +57,28 @@ public class TableDAO{
         return id;
     }
 
+    public Integer updateSet(String tableName, Map<String, String> values, Map<String, String[]> queryParams){
+        Table table = this.getMetaData(tableName);
+        String query = QueryBuilder.updateQuery(table, values, queryParams);
+        System.out.println(query);
+        Connection conn = null;  
+        Statement statement;
+        ResultSet rs;
+        Integer id = 0;
+        try {
+            conn = DriverManager.getConnection(this.url, this.user, this.password);
+            statement = conn.createStatement();
+            statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
+            rs = statement.getGeneratedKeys();
+            if(rs.next())
+                id = rs.getInt(1);
+        } catch (SQLException e) {
+            //e.printStackTrace();
+            System.out.println(e.getMessage());
+        }
+        return id;
+    }
+
     public Table getMetaData(String tableName){
         Connection conn = null;  
         PreparedStatement statement;
@@ -78,6 +100,28 @@ public class TableDAO{
             System.out.println(e.toString());
         }
         return table;
+    }
+
+    public Integer deleteFrom(String tableName, Map<String, String[]> queryParams){
+        Table table = this.getMetaData(tableName);
+        String query = QueryBuilder.deleteQuery(table, queryParams);
+        System.out.println(query);
+        Connection conn = null;  
+        Statement statement;
+        ResultSet rs;
+        Integer id = 0;
+        try {
+            conn = DriverManager.getConnection(this.url, this.user, this.password);
+            statement = conn.createStatement();
+            statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
+            rs = statement.getGeneratedKeys();
+            if(rs.next())
+                id = rs.getInt(1);
+        } catch (SQLException e) {
+            //e.printStackTrace();
+            System.out.println(e.getMessage());
+        }
+        return id;
     }
 
 }

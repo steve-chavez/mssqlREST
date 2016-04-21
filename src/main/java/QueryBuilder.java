@@ -38,4 +38,57 @@ public class QueryBuilder{
         return query.validate().toString();
     }
 
+    public static String updateQuery(
+            Table table, 
+            Map<String, String> values,
+            Map<String, String[]> queryParams
+    ){
+        DbSpec builderSpec = new DbSpec();
+        DbSchema builderSchema = builderSpec.addDefaultSchema();
+        DbTable builderTable = builderSchema.addTable(table.name);
+
+        for (Map.Entry<String, String> entry : table.columns.entrySet()) {
+            builderTable.addColumn(entry.getKey(), entry.getValue(), null);
+        }
+
+        UpdateQuery query = new UpdateQuery(builderTable);
+
+        for (Map.Entry<String, String> entry : values.entrySet()) {
+            query.addSetClause( builderTable.findColumn(entry.getKey()), entry.getValue());
+        }
+
+        for (Map.Entry<String, String[]> entry : queryParams.entrySet()) {
+            query.addCondition( 
+                BinaryCondition.equalTo(builderTable.findColumn(entry.getKey()),
+                    entry.getValue()[0])
+            );
+        }
+
+        return query.validate().toString();
+    }
+
+    public static String deleteQuery(
+            Table table, 
+            Map<String, String[]> queryParams
+    ){
+        DbSpec builderSpec = new DbSpec();
+        DbSchema builderSchema = builderSpec.addDefaultSchema();
+        DbTable builderTable = builderSchema.addTable(table.name);
+
+        for (Map.Entry<String, String> entry : table.columns.entrySet()) {
+            builderTable.addColumn(entry.getKey(), entry.getValue(), null);
+        }
+
+        DeleteQuery query = new DeleteQuery(builderTable);
+
+        for (Map.Entry<String, String[]> entry : queryParams.entrySet()) {
+            query.addCondition( 
+                BinaryCondition.equalTo(builderTable.findColumn(entry.getKey()),
+                    entry.getValue()[0])
+            );
+        }
+
+        return query.validate().toString();
+    }
+
 }
