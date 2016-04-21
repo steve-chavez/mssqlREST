@@ -1,9 +1,5 @@
 
 import spark.*;
-import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.core.type.*;
-import com.fasterxml.jackson.core.*;
-
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.Gson;
 
@@ -15,7 +11,6 @@ public class ApplicationServer {
 
     public static void main(String[] args) throws FileNotFoundException{
 
-        
 		Yaml yaml = new Yaml();
 	
 		Map<String, Object> vals = (Map<String, Object>) yaml

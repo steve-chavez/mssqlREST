@@ -10,19 +10,13 @@ repositories{
 
 dependencies {
    compile (
-       //**Json
        'org.json:json:20160212',
        'com.google.code.gson:gson:1.7.2',
-       //**SQL
+       'org.yaml:snakeyaml:1.17',
        files('./sqljdbc4.jar'),
        'com.healthmarketscience.common:common-util:1.0.0',
        'com.healthmarketscience.sqlbuilder:sqlbuilder:2.1.2',
-       //**HTTP
-       'com.sparkjava:spark-core:2.3',
-       //JSON
-       'com.fasterxml.jackson.core:jackson-core:2.6.1',
-       'com.fasterxml.jackson.core:jackson-databind:2.6.1',
-       'org.yaml:snakeyaml:1.17'
+       'com.sparkjava:spark-core:2.3'
    )
 }
 
