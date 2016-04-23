@@ -3,11 +3,11 @@ import com.healthmarketscience.sqlbuilder.dbspec.basic.*;
 import com.healthmarketscience.sqlbuilder.*;
 
 import java.util.*;
-import model.*;
+import java.util.stream.*;
 
 public class QueryBuilder{
 
-    public static String selectQuery(Table table){
+    public static String selectQuery(Structure.Table table){
         DbSpec builderSpec = new DbSpec();
         DbSchema builderSchema = builderSpec.addDefaultSchema();
         DbTable builderTable = builderSchema.addTable(table.name);
@@ -20,7 +20,7 @@ public class QueryBuilder{
             .validate().toString();
     }
 
-    public static String insertQuery(Table table, Map<String, String> values){
+    public static String insertQuery(Structure.Table table, Map<String, String> values){
         DbSpec builderSpec = new DbSpec();
         DbSchema builderSchema = builderSpec.addDefaultSchema();
         DbTable builderTable = builderSchema.addTable(table.name);
@@ -39,7 +39,7 @@ public class QueryBuilder{
     }
 
     public static String updateQuery(
-            Table table, 
+            Structure.Table table, 
             Map<String, String> values,
             Map<String, String[]> queryParams
     ){
@@ -68,7 +68,7 @@ public class QueryBuilder{
     }
 
     public static String deleteQuery(
-            Table table, 
+            Structure.Table table, 
             Map<String, String[]> queryParams
     ){
         DbSpec builderSpec = new DbSpec();
@@ -91,4 +91,14 @@ public class QueryBuilder{
         return query.validate().toString();
     }
 
+    public static String functionQuery(Structure.Routine routine){
+        StringBuilder builder = new StringBuilder("SELECT dbo.");
+        builder.append(routine.name);
+        builder.append("(");
+        List<String> questionParams =
+            Collections.nCopies(routine.parameters.size(), "?");
+        builder.append(questionParams.stream().collect(Collectors.joining(", ")));
+        builder.append(")");
+        return builder.toString();
+    }
 }
