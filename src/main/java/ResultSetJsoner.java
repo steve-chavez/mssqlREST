@@ -81,7 +81,7 @@ public class ResultSetJsoner {
         JSONObject obj = new JSONObject();
 
         while(rs.next()) {
-            switch(routine.dataType){
+            switch(routine.returnType){
                 case "bigint":
                 case "smallint":
                 case "int":

@@ -18,13 +18,13 @@ public class Structure{
     public static class Routine{
         public String name; 
         public String routineType; 
-        public String dataType;
+        public String returnType;
         public Map<String, Parameter> parameters = new HashMap<String, Parameter>();
 
         @Override
         public String toString(){
             return name + " : " + 
-                String.join(",", Arrays.asList(routineType, dataType)) +
+                String.join(",", Arrays.asList(routineType, returnType)) +
                 "; parameters : " + parameters.toString();
         }
     }

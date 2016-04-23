@@ -157,7 +157,7 @@ public class TableDAO{
 
     public Structure.Routine getRoutineMetaData(String routineName){
         Structure.Routine routine = new Structure.Routine();
-        String query1 = "SELECT routine_name, routine_type, data_type FROM information_schema.routines WHERE routine_name = ?";
+        String query1 = "SELECT routine_name, routine_type, data_type AS return_type FROM information_schema.routines WHERE routine_name = ?";
         String query2 = "SELECT parameter_name, ordinal_position, data_type, parameter_mode FROM information_schema.parameters WHERE specific_name = ?";
         try {
             Connection conn = DriverManager.getConnection(this.url, this.user, this.password);
@@ -168,7 +168,7 @@ public class TableDAO{
             while(rs1.next()){
                 routine.name = rs1.getString("routine_name");
                 routine.routineType = rs1.getString("routine_type");
-                routine.dataType = rs1.getString("data_type");
+                routine.returnType = rs1.getString("return_type");
             }
             PreparedStatement statement2 = conn.prepareStatement(query2);
             statement2.setString(1, routineName);
