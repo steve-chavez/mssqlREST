@@ -20,6 +20,7 @@ public class Structure{
         public String routineType; 
         public String returnType;
         public Map<String, Parameter> parameters = new HashMap<String, Parameter>();
+        public Map<String, String> returnColumns = new HashMap<String, String>();
 
         @Override
         public String toString(){

@@ -92,7 +92,11 @@ public class QueryBuilder{
     }
 
     public static String functionQuery(Structure.Routine routine){
-        StringBuilder builder = new StringBuilder("SELECT dbo.");
+        StringBuilder builder;
+        if(!routine.returnType.equals("TABLE"))
+            builder = new StringBuilder("SELECT dbo.");
+        else
+            builder = new StringBuilder("SELECT * FROM dbo.");
         builder.append(routine.name);
         builder.append("(");
         List<String> questionParams =

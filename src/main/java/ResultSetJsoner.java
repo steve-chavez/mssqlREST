@@ -7,6 +7,8 @@ import java.sql.SQLException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 
+import java.util.*;
+
 public class ResultSetJsoner {
 
     public static JSONArray convert( ResultSet rs )
@@ -80,50 +82,88 @@ public class ResultSetJsoner {
 
         JSONObject obj = new JSONObject();
 
-        while(rs.next()) {
-            switch(routine.returnType){
-                case "bigint":
-                case "smallint":
-                case "int":
-                case "tinyint":
-                    obj.put("result", rs.getInt(1));
-                    break;
-                case "numeric":
-                case "decimal":
-                    obj.put("result", rs.getDouble(1));
-                    break;
-                case "float":
-                case "real":
-                    obj.put("result", rs.getFloat(1));
-                    break;
-                case "char":
-                case "varchar":
-                case "text":
-                    obj.put("result", rs.getString(1));
-                    break;
-                case "nchar":
-                case "nvarchar":
-                case "ntext":
-                    obj.put("result", rs.getNString(1));
-                    break;
-                case "binary":
-                case "varbinary":
-                case "image":
-                    obj.put("result", rs.getBlob(1));
-                    break;
-                case "date":
-                case "datetime":
-                case "datetime2":
-                case "time":
-                case "timestamp":
-                    obj.put("result", rs.getDate(1));
-                    break;
-                default:
-                    obj.put("result", rs.getObject(1));
-                    break;
-            }
-        }
+        while(rs.next()) 
+            if(!routine.returnType.equals("TABLE"))
+                obj.put("result", getType(routine.returnType, rs, new Integer(1)));
+            else
+                for(Map.Entry<String, String> entry : routine.returnColumns.entrySet()) 
+                    obj.put(entry.getKey(), getType(entry.getValue(), rs, entry.getKey()));
         return obj;
     }
 
+    public static Object getType(String type, ResultSet rs, int index)
+        throws SQLException{
+
+        switch(type){
+            case "bigint":
+            case "smallint":
+            case "int":
+            case "tinyint":
+                return rs.getInt(index);
+            case "numeric":
+            case "decimal":
+                return rs.getDouble(index);
+            case "float":
+            case "real":
+                return rs.getFloat(index);
+            case "char":
+            case "varchar":
+            case "text":
+                return rs.getString(index);
+            case "nchar":
+            case "nvarchar":
+            case "ntext":
+                return rs.getNString(index);
+            case "binary":
+            case "varbinary":
+            case "image":
+                return rs.getBlob(index);
+            case "date":
+            case "datetime":
+            case "datetime2":
+            case "time":
+            case "timestamp":
+                return rs.getDate(index);
+            default:
+                return rs.getObject(index);
+        }
+    }
+
+    public static Object getType(String type, ResultSet rs, String index)
+        throws SQLException{
+
+        switch(type){
+            case "bigint":
+            case "smallint":
+            case "int":
+            case "tinyint":
+                return rs.getInt(index);
+            case "numeric":
+            case "decimal":
+                return rs.getDouble(index);
+            case "float":
+            case "real":
+                return rs.getFloat(index);
+            case "char":
+            case "varchar":
+            case "text":
+                return rs.getString(index);
+            case "nchar":
+            case "nvarchar":
+            case "ntext":
+                return rs.getNString(index);
+            case "binary":
+            case "varbinary":
+            case "image":
+                return rs.getBlob(index);
+            case "date":
+            case "datetime":
+            case "datetime2":
+            case "time":
+            case "timestamp":
+                return rs.getDate(index);
+            default:
+                return rs.getObject(index);
+        }
+    }
 }

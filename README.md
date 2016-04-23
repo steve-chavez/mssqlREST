@@ -10,12 +10,8 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
  - [x] Support for POST with json response.
  - [x] Support for UPDATE with no response.
  - [x] Support for DELETE with no response.
- - [x] Support for FUNCTION
+ - [x] Support for FUNCTION(Table valued, scalar valued)
  - [ ] Support for PROCEDURE
-
-## Not implemented
-
- - [ ] Function with TABLE return type not yet supported.
 
 ## Problems to solve
 
@@ -24,25 +20,7 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
  - [ ] Integrate library for connection pooling.
  - [ ] Use transactions.
  - [ ] Develop postgrest compliant http methods and querystrings(Which library?).
-
-## Flow
-
-### GET : 
- 
-    Table -> Obtain metadata from DB(datatypes) with Table -> Map ResultSet to Java Datatypes 
-    -> Convert to JSON -> Send JSON through HTTP Response 
-
-    Table -> Obtain metadata from DB with Table(columns and types) -> Map this to java classes ->
-    Build query with Table and java classes -> Prepare statement -> Construct JSON from ResultSet with Java classes -> HTTP Response JSON
-
-### POST :
-
-    Table and posted data in JSON -> Obtain metadata from DB(datatypes) with Table 
-    -> Map JSON posted data to Java datatypes matching DB datatypes 
-    -> Insert to DB -> Send result through HTTP Response
-
-    Table and posted JSON -> Obtain metadata from DB with Table(columns and types) -> Map this to java classes ->
-    Build query with java classes and JSON -> Prepare statement -> HTTP Response Result JSON
+ - [ ] Consistent error messages for formating exceptions(Check what postgrest does for this).
 
 ## Notes
 

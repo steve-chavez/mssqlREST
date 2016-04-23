@@ -159,6 +159,7 @@ public class TableDAO{
         Structure.Routine routine = new Structure.Routine();
         String query1 = "SELECT routine_name, routine_type, data_type AS return_type FROM information_schema.routines WHERE routine_name = ?";
         String query2 = "SELECT parameter_name, ordinal_position, data_type, parameter_mode FROM information_schema.parameters WHERE specific_name = ?";
+        String query3 = "SELECT name, type_name(user_type_id) AS data_type FROM sys.all_columns WHERE object_id = object_id(?)";
         try {
             Connection conn = DriverManager.getConnection(this.url, this.user, this.password);
             conn.setAutoCommit(false);
@@ -174,6 +175,8 @@ public class TableDAO{
             statement2.setString(1, routineName);
             ResultSet rs2 = statement2.executeQuery();
             while(rs2.next()){
+                //SQL Server gets a parameter with ordinal_position of 0 to indicate return type
+                //this is redundant since it was previously obtained
                 if(rs2.getInt("ordinal_position") > 0){
                     Structure.Parameter parameter = new Structure.Parameter();
                     parameter.name = rs2.getString("parameter_name").substring(1);
@@ -182,6 +185,13 @@ public class TableDAO{
                     parameter.parameterMode = rs2.getString("parameter_mode");
                     routine.parameters.put(parameter.name, parameter); 
                 }
+            }
+            if(routine.returnType.equals("TABLE")){
+                PreparedStatement statement3 = conn.prepareStatement(query3);
+                statement3.setString(1, routineName);
+                ResultSet rs3 = statement3.executeQuery();
+                while(rs3.next())
+                    routine.returnColumns.put(rs3.getString("name"), rs3.getString("data_type")); 
             }
             conn.commit();
         } catch (SQLException e) {
