@@ -23,17 +23,16 @@ public class TableDAO{
         Structure.Table table = this.getTableMetaData(tableName);
         String query = QueryBuilder.selectQuery(table);
         System.out.println(query);
-        Connection conn = null;  
-        PreparedStatement statement;
-        ResultSet rs;
-        JSONArray json = new JSONArray();
+        JSONArray json = null;
         try {
-            conn = DriverManager.getConnection(this.url, this.user, this.password);
-            statement = conn.prepareStatement(query);
-            rs = statement.executeQuery();
+            Connection conn = DriverManager.getConnection(this.url, this.user, this.password);
+            PreparedStatement statement = conn.prepareStatement(query);
+            ResultSet rs = statement.executeQuery();
             json = ResultSetJsoner.convert(rs);
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            JSONObject obj = new JSONObject();
+            obj.put("error", e.getMessage());
+            json.put(obj);
         }
         return json;
     }
@@ -42,15 +41,12 @@ public class TableDAO{
         Structure.Table table = this.getTableMetaData(tableName);
         String query = QueryBuilder.insertQuery(table, values);
         System.out.println(query);
-        Connection conn = null;  
-        Statement statement;
-        ResultSet rs;
         Integer id = 0;
         try {
-            conn = DriverManager.getConnection(this.url, this.user, this.password);
-            statement = conn.createStatement();
+            Connection conn = DriverManager.getConnection(this.url, this.user, this.password);
+            Statement statement = conn.createStatement();
             statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
-            rs = statement.getGeneratedKeys();
+            ResultSet rs = statement.getGeneratedKeys();
             if(rs.next())
                 id = rs.getInt(1);
         } catch (SQLException e) {
@@ -63,15 +59,12 @@ public class TableDAO{
         Structure.Table table = this.getTableMetaData(tableName);
         String query = QueryBuilder.updateQuery(table, values, queryParams);
         System.out.println(query);
-        Connection conn = null;  
-        Statement statement;
-        ResultSet rs;
         Integer id = 0;
         try {
-            conn = DriverManager.getConnection(this.url, this.user, this.password);
-            statement = conn.createStatement();
+            Connection conn = DriverManager.getConnection(this.url, this.user, this.password);
+            Statement statement = conn.createStatement();
             statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
-            rs = statement.getGeneratedKeys();
+            ResultSet rs = statement.getGeneratedKeys();
             if(rs.next())
                 id = rs.getInt(1);
         } catch (SQLException e) {
@@ -84,15 +77,12 @@ public class TableDAO{
         Structure.Table table = this.getTableMetaData(tableName);
         String query = QueryBuilder.deleteQuery(table, queryParams);
         System.out.println(query);
-        Connection conn = null;  
-        Statement statement;
-        ResultSet rs;
         Integer id = 0;
         try {
-            conn = DriverManager.getConnection(this.url, this.user, this.password);
-            statement = conn.createStatement();
+            Connection conn = DriverManager.getConnection(this.url, this.user, this.password);
+            Statement statement = conn.createStatement();
             statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
-            rs = statement.getGeneratedKeys();
+            ResultSet rs = statement.getGeneratedKeys();
             if(rs.next())
                 id = rs.getInt(1);
         } catch (SQLException e) {

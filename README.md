@@ -22,6 +22,8 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
  - [ ] Use transactions.
  - [ ] Develop postgrest compliant http methods and querystrings(Which library?).
  - [ ] Consistent error messages for formating exceptions(Check what postgrest does for this).
+ - [ ] Consistent http success codes(Check what postgrest does for this).
+ - [ ] Consistent http error codes(Check what postgrest does for this).
 
 ## Notes
 
