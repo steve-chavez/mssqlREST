@@ -2,6 +2,7 @@
 import org.json.*;
 
 import java.sql.*;
+import javax.sql.DataSource;
 
 import com.google.gson.*;
 
@@ -9,14 +10,10 @@ import java.util.*;
 
 public class TableDAO{
 
-    private String url;
-    private String user;
-    private String password;
+    private DataSource ds;
 
-    public TableDAO(String url, String user, String password){
-        this.url = url;
-        this.user = user;
-        this.password = password;
+    public TableDAO(DataSource ds){
+        this.ds = ds;
     }
     
     public JSONArray selectFrom(String tableName){
@@ -24,8 +21,7 @@ public class TableDAO{
         String query = QueryBuilder.selectQuery(table);
         System.out.println(query);
         JSONArray json = new JSONArray();
-        try {
-            Connection conn = DriverManager.getConnection(this.url, this.user, this.password);
+        try(Connection conn = this.ds.getConnection()){
             PreparedStatement statement = conn.prepareStatement(query);
             ResultSet rs = statement.executeQuery();
             json = ResultSetJsoner.convert(rs);
@@ -42,8 +38,7 @@ public class TableDAO{
         String query = QueryBuilder.insertQuery(table, values);
         System.out.println(query);
         Integer id = 0;
-        try {
-            Connection conn = DriverManager.getConnection(this.url, this.user, this.password);
+        try(Connection conn = this.ds.getConnection()){
             Statement statement = conn.createStatement();
             statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
             ResultSet rs = statement.getGeneratedKeys();
@@ -60,8 +55,7 @@ public class TableDAO{
         String query = QueryBuilder.updateQuery(table, values, queryParams);
         System.out.println(query);
         Integer id = 0;
-        try {
-            Connection conn = DriverManager.getConnection(this.url, this.user, this.password);
+        try(Connection conn = this.ds.getConnection()){
             Statement statement = conn.createStatement();
             statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
             ResultSet rs = statement.getGeneratedKeys();
@@ -78,8 +72,7 @@ public class TableDAO{
         String query = QueryBuilder.deleteQuery(table, queryParams);
         System.out.println(query);
         Integer id = 0;
-        try {
-            Connection conn = DriverManager.getConnection(this.url, this.user, this.password);
+        try(Connection conn = this.ds.getConnection()){
             Statement statement = conn.createStatement();
             statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
             ResultSet rs = statement.getGeneratedKeys();
@@ -96,8 +89,7 @@ public class TableDAO{
         Structure.Routine routine = this.getRoutineMetaData(funcName);
         String query = QueryBuilder.functionQuery(routine); 
         System.out.println(query);
-        try {
-            Connection conn = DriverManager.getConnection(this.url, this.user, this.password);
+        try(Connection conn = this.ds.getConnection()){
             CallableStatement cs = StatementBuilder.buildCallableStatement(conn, query, routine, values);
             if(routine.type.equals("FUNCTION")){
                 ResultSet rs = cs.executeQuery();
@@ -115,17 +107,13 @@ public class TableDAO{
     }
 
     public Structure.Table getTableMetaData(String tableName){
-        Connection conn = null;  
-        PreparedStatement statement;
-        ResultSet rs;
         Structure.Table table = new Structure.Table();
         table.name = tableName; 
         String query = "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = ?";
-        try {
-            conn = DriverManager.getConnection(this.url, this.user, this.password);
-            statement = conn.prepareStatement(query);
+        try(Connection conn = this.ds.getConnection()){
+            PreparedStatement statement = conn.prepareStatement(query);
             statement.setString(1, tableName);
-            rs = statement.executeQuery();
+            ResultSet rs = statement.executeQuery();
             while(rs.next()){
                 table.columns.put(rs.getString("column_name"), rs.getString("data_type"));
             }
@@ -140,8 +128,7 @@ public class TableDAO{
         String query1 = "SELECT routine_name, routine_type, data_type AS return_type FROM information_schema.routines WHERE routine_name = ?";
         String query2 = "SELECT parameter_name, ordinal_position, data_type, parameter_mode FROM information_schema.parameters WHERE specific_name = ?";
         String query3 = "SELECT name, type_name(user_type_id) AS data_type FROM sys.all_columns WHERE object_id = object_id(?)";
-        try {
-            Connection conn = DriverManager.getConnection(this.url, this.user, this.password);
+        try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             PreparedStatement statement1 = conn.prepareStatement(query1);
             statement1.setString(1, routineName);

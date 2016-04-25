@@ -16,7 +16,8 @@ dependencies {
        files('./sqljdbc4.jar'),
        'com.healthmarketscience.common:common-util:1.0.0',
        'com.healthmarketscience.sqlbuilder:sqlbuilder:2.1.2',
-       'com.sparkjava:spark-core:2.3'
+       'com.sparkjava:spark-core:2.3',
+       'com.zaxxer:HikariCP:2.4.5'
    )
 }
 

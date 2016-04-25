@@ -7,6 +7,8 @@ import java.util.*;
 import java.io.*;
 import org.yaml.snakeyaml.*;
 
+import com.zaxxer.hikari.*;
+
 public class ApplicationServer {
 
     public static void main(String[] args) throws FileNotFoundException{
@@ -16,9 +18,12 @@ public class ApplicationServer {
 		Map<String, Object> vals = (Map<String, Object>) yaml
 				.load(new FileInputStream(new File("config.yml")));
 
-        TableDAO tableDAO = new TableDAO(
-            vals.get("url").toString(), vals.get("user").toString(), vals.get("password").toString()
-        );
+        HikariDataSource ds = new HikariDataSource();
+        ds.setJdbcUrl(vals.get("url").toString());
+        ds.setUsername(vals.get("user").toString());
+        ds.setPassword(vals.get("password").toString());
+
+        TableDAO tableDAO = new TableDAO(ds);
 
         Spark.port((Integer)vals.get("port")); 
 
