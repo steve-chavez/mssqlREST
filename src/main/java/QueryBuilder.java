@@ -93,16 +93,26 @@ public class QueryBuilder{
 
     public static String functionQuery(Structure.Routine routine){
         StringBuilder builder;
-        if(!routine.returnType.equals("TABLE"))
-            builder = new StringBuilder("SELECT dbo.");
-        else
-            builder = new StringBuilder("SELECT * FROM dbo.");
-        builder.append(routine.name);
-        builder.append("(");
-        List<String> questionParams =
-            Collections.nCopies(routine.parameters.size(), "?");
-        builder.append(questionParams.stream().collect(Collectors.joining(", ")));
-        builder.append(")");
+        if(routine.type.equals("FUNCTION")){
+            if(!routine.returnType.equals("TABLE"))
+                builder = new StringBuilder("SELECT dbo.");
+            else
+                builder = new StringBuilder("SELECT * FROM dbo.");
+            builder.append(routine.name);
+            builder.append("(");
+            List<String> questionParams =
+                Collections.nCopies(routine.parameters.size(), "?");
+            builder.append(questionParams.stream().collect(Collectors.joining(", ")));
+            builder.append(")");
+        }else{
+            builder = new StringBuilder("{call ");
+            builder.append(routine.name);
+            builder.append("(");
+            List<String> questionParams =
+                Collections.nCopies(routine.parameters.size(), "?");
+            builder.append(questionParams.stream().collect(Collectors.joining(", ")));
+            builder.append(")}");
+        }
         return builder.toString();
     }
 }

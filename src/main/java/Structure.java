@@ -17,7 +17,7 @@ public class Structure{
 
     public static class Routine{
         public String name; 
-        public String routineType; 
+        public String type; 
         public String returnType;
         public Map<String, Parameter> parameters = new HashMap<String, Parameter>();
         public Map<String, String> returnColumns = new HashMap<String, String>();
@@ -25,7 +25,7 @@ public class Structure{
         @Override
         public String toString(){
             return name + " : " + 
-                String.join(",", Arrays.asList(routineType, returnType)) +
+                String.join(",", Arrays.asList(type, returnType)) +
                 "; parameters : " + parameters.toString();
         }
     }

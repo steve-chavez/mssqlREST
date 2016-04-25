@@ -50,12 +50,12 @@ public class ApplicationServer {
             return tableDAO.deleteFrom(request.params(":table"), request.queryMap().toMap());
         });
 
-        Spark.post("/rpc/:proc", (request, response) -> {
+        Spark.post("/rpc/:routine", (request, response) -> {
             Gson gson = new Gson();
             Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
             response.status(200);
             response.type("application/json");
-            return tableDAO.selectFunc(request.params(":proc"), values).toString();
+            return tableDAO.callRoutine(request.params(":routine"), values).toString();
         });
     }
 }

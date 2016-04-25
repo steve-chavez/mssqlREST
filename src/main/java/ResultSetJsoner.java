@@ -4,6 +4,7 @@ import org.json.JSONObject;
 import org.json.JSONException;
 
 import java.sql.SQLException;
+import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 
@@ -77,17 +78,26 @@ public class ResultSetJsoner {
         return json;
     }
 
-    public static JSONObject funcResultToJson( Structure.Routine routine, ResultSet rs )
+    public static JSONObject routineResultToJson( Structure.Routine routine, ResultSet rs)
         throws SQLException, JSONException {
 
         JSONObject obj = new JSONObject();
-
         while(rs.next()) 
             if(!routine.returnType.equals("TABLE"))
                 obj.put("result", getType(routine.returnType, rs, new Integer(1)));
             else
                 for(Map.Entry<String, String> entry : routine.returnColumns.entrySet()) 
                     obj.put(entry.getKey(), getType(entry.getValue(), rs, entry.getKey()));
+        return obj;
+    }
+
+    public static JSONObject routineResultToJson( Structure.Routine routine, CallableStatement cs)
+        throws SQLException, JSONException {
+
+        JSONObject obj = new JSONObject();
+        for(Map.Entry<String, Structure.Parameter> entry : routine.parameters.entrySet())
+            if(entry.getValue().parameterMode.equals("INOUT") || entry.getValue().parameterMode.equals("OUT"))
+                obj.put(entry.getKey(), getType(entry.getValue().dataType, cs, entry.getKey()));
         return obj;
     }
 
@@ -164,6 +174,44 @@ public class ResultSetJsoner {
                 return rs.getDate(index);
             default:
                 return rs.getObject(index);
+        }
+    }
+
+    public static Object getType(String type, CallableStatement cs, String index)
+        throws SQLException{
+
+        switch(type){
+            case "bigint":
+            case "smallint":
+            case "int":
+            case "tinyint":
+                return cs.getInt(index);
+            case "numeric":
+            case "decimal":
+                return cs.getDouble(index);
+            case "float":
+            case "real":
+                return cs.getFloat(index);
+            case "char":
+            case "varchar":
+            case "text":
+                return cs.getString(index);
+            case "nchar":
+            case "nvarchar":
+            case "ntext":
+                return cs.getNString(index);
+            case "binary":
+            case "varbinary":
+            case "image":
+                return cs.getBlob(index);
+            case "date":
+            case "datetime":
+            case "datetime2":
+            case "time":
+            case "timestamp":
+                return cs.getDate(index);
+            default:
+                return cs.getObject(index);
         }
     }
 }

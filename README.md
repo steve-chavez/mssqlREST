@@ -11,7 +11,8 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
  - [x] Support for UPDATE with no response.
  - [x] Support for DELETE with no response.
  - [x] Support for FUNCTION(Table valued, scalar valued)
- - [ ] Support for PROCEDURE
+ - [x] Support for PROCEDURE(Only OUT parameters as result,
+       even SQL server sp_help doesn't know return type when using RETURN, also in t-sql only INOUT parameters exist)
 
 ## Problems to solve
 

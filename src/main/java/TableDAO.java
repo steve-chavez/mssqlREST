@@ -101,32 +101,22 @@ public class TableDAO{
         return id;
     }
 
-    public Integer execProc(String procName){
-        Connection conn = null;  
-        Statement statement;
-        ResultSet rs;
-        Integer id = 0;
-        String query = String.format("EXEC %s 1", procName);
-        System.out.println(query);
-        try {
-            conn = DriverManager.getConnection(this.url, this.user, this.password);
-            statement = conn.prepareStatement(query);
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-        return id;
-    }
-
-    public JSONObject selectFunc(String funcName, Map<String, String> values){
+    public JSONObject callRoutine(String funcName, Map<String, String> values){
         JSONObject obj = null;
         Structure.Routine routine = this.getRoutineMetaData(funcName);
         String query = QueryBuilder.functionQuery(routine); 
         System.out.println(query);
         try {
             Connection conn = DriverManager.getConnection(this.url, this.user, this.password);
-            PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, routine, values);
-            ResultSet rs = statement.executeQuery();
-            obj = ResultSetJsoner.funcResultToJson(routine, rs);
+            CallableStatement cs = StatementBuilder.buildCallableStatement(conn, query, routine, values);
+            if(routine.type.equals("FUNCTION")){
+                ResultSet rs = cs.executeQuery();
+                obj = ResultSetJsoner.routineResultToJson(routine, rs);
+            }
+            else{
+                cs.execute();
+                obj = ResultSetJsoner.routineResultToJson(routine, cs);
+            }
         } catch (SQLException e) {
             System.out.println(e.getMessage());
             obj.put("error", e.getMessage());
@@ -168,7 +158,7 @@ public class TableDAO{
             ResultSet rs1 = statement1.executeQuery();
             while(rs1.next()){
                 routine.name = rs1.getString("routine_name");
-                routine.routineType = rs1.getString("routine_type");
+                routine.type = rs1.getString("routine_type");
                 routine.returnType = rs1.getString("return_type");
             }
             PreparedStatement statement2 = conn.prepareStatement(query2);
@@ -186,7 +176,7 @@ public class TableDAO{
                     routine.parameters.put(parameter.name, parameter); 
                 }
             }
-            if(routine.returnType.equals("TABLE")){
+            if(routine.returnType != null && routine.returnType.equals("TABLE")){
                 PreparedStatement statement3 = conn.prepareStatement(query3);
                 statement3.setString(1, routineName);
                 ResultSet rs3 = statement3.executeQuery();
