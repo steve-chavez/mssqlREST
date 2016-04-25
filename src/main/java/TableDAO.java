@@ -11,9 +11,11 @@ import java.util.*;
 public class TableDAO{
 
     private DataSource ds;
+    private String defaultRole = "planillero";
 
-    public TableDAO(DataSource ds){
+    public TableDAO(DataSource ds, String defaultRole){
         this.ds = ds;
+        this.defaultRole = defaultRole;
     }
     
     public JSONArray selectFrom(String tableName){
@@ -22,9 +24,12 @@ public class TableDAO{
         System.out.println(query);
         JSONArray json = new JSONArray();
         try(Connection conn = this.ds.getConnection()){
+            conn.setAutoCommit(false);
+            conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
             PreparedStatement statement = conn.prepareStatement(query);
             ResultSet rs = statement.executeQuery();
             json = ResultSetJsoner.convert(rs);
+            conn.commit();
         } catch (SQLException e) {
             JSONObject obj = new JSONObject();
             obj.put("error", e.getMessage());
@@ -39,11 +44,14 @@ public class TableDAO{
         System.out.println(query);
         Integer id = 0;
         try(Connection conn = this.ds.getConnection()){
+            conn.setAutoCommit(false);
+            conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
             Statement statement = conn.createStatement();
             statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
             ResultSet rs = statement.getGeneratedKeys();
             if(rs.next())
                 id = rs.getInt(1);
+            conn.commit();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -56,11 +64,14 @@ public class TableDAO{
         System.out.println(query);
         Integer id = 0;
         try(Connection conn = this.ds.getConnection()){
+            conn.setAutoCommit(false);
+            conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
             Statement statement = conn.createStatement();
             statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
             ResultSet rs = statement.getGeneratedKeys();
             if(rs.next())
                 id = rs.getInt(1);
+            conn.commit();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -73,11 +84,14 @@ public class TableDAO{
         System.out.println(query);
         Integer id = 0;
         try(Connection conn = this.ds.getConnection()){
+            conn.setAutoCommit(false);
+            conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
             Statement statement = conn.createStatement();
             statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
             ResultSet rs = statement.getGeneratedKeys();
             if(rs.next())
                 id = rs.getInt(1);
+            conn.commit();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -90,6 +104,8 @@ public class TableDAO{
         String query = QueryBuilder.functionQuery(routine); 
         System.out.println(query);
         try(Connection conn = this.ds.getConnection()){
+            conn.setAutoCommit(false);
+            conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
             CallableStatement cs = StatementBuilder.buildCallableStatement(conn, query, routine, values);
             if(routine.type.equals("FUNCTION")){
                 ResultSet rs = cs.executeQuery();
@@ -99,6 +115,7 @@ public class TableDAO{
                 cs.execute();
                 obj = ResultSetJsoner.routineResultToJson(routine, cs);
             }
+            conn.commit();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
             obj.put("error", e.getMessage());

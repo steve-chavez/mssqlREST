@@ -5,5 +5,8 @@ user: stevebash
 
 password: 1qaz"WSX
     
+defaultRole: planillero
+
 port: 9090
+
 

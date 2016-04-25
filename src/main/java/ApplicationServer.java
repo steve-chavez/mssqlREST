@@ -23,7 +23,7 @@ public class ApplicationServer {
         ds.setUsername(vals.get("user").toString());
         ds.setPassword(vals.get("password").toString());
 
-        TableDAO tableDAO = new TableDAO(ds);
+        TableDAO tableDAO = new TableDAO(ds, vals.get("defaultRole").toString());
 
         Spark.port((Integer)vals.get("port")); 
 
