@@ -27,6 +27,16 @@ public class ApplicationServer {
 
         Spark.port((Integer)vals.get("port")); 
 
+        //CORS
+        Spark.before(new Filter() {
+            @Override
+            public void handle(Request request, Response response) {
+                response.header("Access-Control-Allow-Origin", "*");
+                response.header("Access-Control-Request-Method", "*");
+                response.header("Access-Control-Allow-Headers", "*");
+            }
+        });
+
         Spark.get("/:table", (request, response) -> {
             response.status(200);
             response.type("application/json");
