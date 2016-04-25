@@ -13,6 +13,7 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
  - [x] Support for FUNCTION(Table valued, scalar valued)
  - [x] Support for PROCEDURE(Only OUT parameters as result,
        even SQL server sp_help doesn't know return type when using RETURN, also in t-sql only INOUT parameters exist)
+ - [ ] Support for user impersonation.
 
 ## Problems to solve
 
@@ -28,3 +29,6 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
 ## Notes
 
 - [StringJoiner](http://stackoverflow.com/a/22577565)
+- https://github.com/Azure/azure-content/blob/master/articles/sql-database/sql-database-manage-azure-ssms.md
+- https://msdn.microsoft.com/en-us/library/ms181362.aspx
+

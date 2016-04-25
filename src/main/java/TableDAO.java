@@ -23,7 +23,7 @@ public class TableDAO{
         Structure.Table table = this.getTableMetaData(tableName);
         String query = QueryBuilder.selectQuery(table);
         System.out.println(query);
-        JSONArray json = null;
+        JSONArray json = new JSONArray();
         try {
             Connection conn = DriverManager.getConnection(this.url, this.user, this.password);
             PreparedStatement statement = conn.prepareStatement(query);
