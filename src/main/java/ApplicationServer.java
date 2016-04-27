@@ -32,18 +32,26 @@ public class ApplicationServer {
             @Override
             public void handle(Request request, Response response) {
                 response.header("Access-Control-Allow-Origin", "*");
-                response.header("Access-Control-Request-Method", "*");
-                response.header("Access-Control-Allow-Headers", "*");
+                response.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+                response.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
             }
         });
 
+        Spark.options("/:table", (request, response) -> {
+            System.out.println(request.requestMethod() + " : " + request.url());
+            response.status(200);
+            return "OK";
+        });
+
         Spark.get("/:table", (request, response) -> {
+            System.out.println(request.requestMethod() + " : " + request.url());
             response.status(200);
             response.type("application/json");
             return tableDAO.selectFrom(request.params(":table")).toString();
         });
 
         Spark.post("/:table", (request, response) -> {
+            System.out.println(request.requestMethod() + " : " + request.url());
             Gson gson = new Gson();
             Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
             response.status(200);
@@ -52,6 +60,7 @@ public class ApplicationServer {
         });
 
         Spark.patch("/:table", (request, response) -> {
+            System.out.println(request.requestMethod() + " : " + request.url());
             Gson gson = new Gson();
             Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
             response.status(200);
@@ -60,12 +69,14 @@ public class ApplicationServer {
         });
 
         Spark.delete("/:table", (request, response) -> {
+            System.out.println(request.requestMethod() + " : " + request.url());
             response.status(200);
             response.type("application/json");
             return tableDAO.deleteFrom(request.params(":table"), request.queryMap().toMap());
         });
 
         Spark.post("/rpc/:routine", (request, response) -> {
+            System.out.println(request.requestMethod() + " : " + request.url());
             Gson gson = new Gson();
             Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
             response.status(200);

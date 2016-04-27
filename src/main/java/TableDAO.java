@@ -40,14 +40,14 @@ public class TableDAO{
 
     public Integer insertInto(String tableName, Map<String, String> values){
         Structure.Table table = this.getTableMetaData(tableName);
-        String query = QueryBuilder.insertQuery(table, values);
+        String query = QueryBuilder.insertQuery(table, values.keySet().toArray(new String[values.size()]));
         System.out.println(query);
         Integer id = 0;
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
-            Statement statement = conn.createStatement();
-            statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, values);
+            statement.executeUpdate();
             ResultSet rs = statement.getGeneratedKeys();
             if(rs.next())
                 id = rs.getInt(1);

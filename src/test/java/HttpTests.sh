@@ -11,3 +11,5 @@ http POST localhost:8080/rpc/concepto_essalud monto_imponible_onp_essalud=320 as
 
 # Run SqlTests.sql first
 http POST localhost:8080/rpc/exec_param param=1 res1=3 res2=4 
+
+http PATCH localhost:8080/aguinaldo?id=5 monto=500 meses_transcurridos=5 
