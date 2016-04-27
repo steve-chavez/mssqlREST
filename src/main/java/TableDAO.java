@@ -58,19 +58,21 @@ public class TableDAO{
         return id;
     }
 
-    public Integer updateSet(String tableName, Map<String, String> values, Map<String, String[]> queryParams){
+    public Integer updateSet(String tableName, Map<String, String> values, Map<String, String> queryParams){
         Structure.Table table = this.getTableMetaData(tableName);
-        String query = QueryBuilder.updateQuery(table, values, queryParams);
+        String query = QueryBuilder.updateQuery(
+                table, values.keySet().toArray(new String[values.size()]), 
+                queryParams.keySet().toArray(new String[queryParams.size()])
+        );
         System.out.println(query);
         Integer id = 0;
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
-            Statement statement = conn.createStatement();
-            statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
-            ResultSet rs = statement.getGeneratedKeys();
-            id = 1;
+            PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, values, queryParams);
+            statement.executeUpdate();
             conn.commit();
+            id = 1;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }

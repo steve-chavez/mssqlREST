@@ -66,7 +66,11 @@ public class ApplicationServer {
             Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
             response.status(200);
             response.type("application/json");
-            return tableDAO.updateSet(request.params(":table"), values, request.queryMap().toMap());
+            Map<String, String> convertedQueryMap = request.queryMap().toMap().entrySet().stream().collect(
+                Collectors.toMap(
+                    Map.Entry::getKey, e -> e.getValue()[0]
+            ));
+            return tableDAO.updateSet(request.params(":table"), values, convertedQueryMap);
         });
 
         Spark.delete("/:table", (request, response) -> {

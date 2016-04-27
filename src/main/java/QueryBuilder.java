@@ -38,31 +38,32 @@ public class QueryBuilder{
 
     public static String updateQuery(
             Structure.Table table, 
-            Map<String, String> values,
-            Map<String, String[]> queryParams
+            String[] vals,
+            String[] params
     ){
-        DbSpec builderSpec = new DbSpec();
-        DbSchema builderSchema = builderSpec.addDefaultSchema();
-        DbTable builderTable = builderSchema.addTable(table.name);
+        StringBuilder builder = new StringBuilder("UPDATE ");
+        builder.append(table.name);
+        builder.append(" SET ");
 
-        for (Map.Entry<String, String> entry : table.columns.entrySet()) {
-            builderTable.addColumn(entry.getKey(), entry.getValue(), null);
+        List<String> questionValues = new ArrayList<String>();
+
+        for (String val : vals) {
+            questionValues.add(val + " = ?");
         }
 
-        UpdateQuery query = new UpdateQuery(builderTable);
+        builder.append(questionValues.stream().collect(Collectors.joining(", ")));
 
-        for (Map.Entry<String, String> entry : values.entrySet()) {
-            query.addSetClause( builderTable.findColumn(entry.getKey()), entry.getValue());
+        builder.append(" WHERE ");
+
+        List<String> questionParams = new ArrayList<String>();
+
+        for (String param : params) {
+            questionParams.add(param + " = ?");
         }
 
-        for (Map.Entry<String, String[]> entry : queryParams.entrySet()) {
-            query.addCondition( 
-                BinaryCondition.equalTo(builderTable.findColumn(entry.getKey()),
-                    entry.getValue()[0])
-            );
-        }
+        builder.append(questionParams.stream().collect(Collectors.joining(" AND ")));
 
-        return query.validate().toString();
+        return builder.toString();
     }
 
     public static String deleteQuery(

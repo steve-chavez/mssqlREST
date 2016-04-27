@@ -18,7 +18,7 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
 ## Improvements
 
  - [ ] Improve query parameter mapping to table value in
-       PATCH and DELETE methods.
+       PATCH and DELETE methods(Don't program by accident).
 
 ## Problems to solve
 
