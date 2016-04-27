@@ -4,6 +4,7 @@ import com.google.gson.reflect.TypeToken;
 import com.google.gson.Gson;
 
 import java.util.*;
+import java.util.stream.*;
 import java.io.*;
 import org.yaml.snakeyaml.*;
 
@@ -72,7 +73,11 @@ public class ApplicationServer {
             System.out.println(request.requestMethod() + " : " + request.url());
             response.status(200);
             response.type("application/json");
-            return tableDAO.deleteFrom(request.params(":table"), request.queryMap().toMap());
+            Map<String, String> convertedQueryMap = request.queryMap().toMap().entrySet().stream().collect(
+                Collectors.toMap(
+                    Map.Entry::getKey, e -> e.getValue()[0]
+            ));
+            return tableDAO.deleteFrom(request.params(":table"), convertedQueryMap);
         });
 
         Spark.post("/rpc/:routine", (request, response) -> {

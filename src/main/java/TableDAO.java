@@ -69,8 +69,7 @@ public class TableDAO{
             Statement statement = conn.createStatement();
             statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
             ResultSet rs = statement.getGeneratedKeys();
-            if(rs.next())
-                id = rs.getInt(1);
+            id = 1;
             conn.commit();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -78,20 +77,18 @@ public class TableDAO{
         return id;
     }
 
-    public Integer deleteFrom(String tableName, Map<String, String[]> queryParams){
+    public Integer deleteFrom(String tableName, Map<String, String> queryParams){
         Structure.Table table = this.getTableMetaData(tableName);
-        String query = QueryBuilder.deleteQuery(table, queryParams);
+        String query = QueryBuilder.deleteQuery(table, queryParams.keySet().toArray(new String[queryParams.size()]));
         System.out.println(query);
         Integer id = 0;
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
-            Statement statement = conn.createStatement();
-            statement.executeUpdate(query, Statement.RETURN_GENERATED_KEYS);
-            ResultSet rs = statement.getGeneratedKeys();
-            if(rs.next())
-                id = rs.getInt(1);
+            PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, queryParams);
+            statement.executeUpdate();
             conn.commit();
+            id = 1;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }

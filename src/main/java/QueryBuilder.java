@@ -67,26 +67,21 @@ public class QueryBuilder{
 
     public static String deleteQuery(
             Structure.Table table, 
-            Map<String, String[]> queryParams
+            String[] params
     ){
-        DbSpec builderSpec = new DbSpec();
-        DbSchema builderSchema = builderSpec.addDefaultSchema();
-        DbTable builderTable = builderSchema.addTable(table.name);
+        StringBuilder builder = new StringBuilder("DELETE FROM ");
+        builder.append(table.name);
+        builder.append(" WHERE ");
 
-        for (Map.Entry<String, String> entry : table.columns.entrySet()) {
-            builderTable.addColumn(entry.getKey(), entry.getValue(), null);
+        List<String> questionParams = new ArrayList<String>();
+
+        for (String param : params) {
+            questionParams.add(param + " = ?");
         }
 
-        DeleteQuery query = new DeleteQuery(builderTable);
+        builder.append(questionParams.stream().collect(Collectors.joining(" AND ")));
 
-        for (Map.Entry<String, String[]> entry : queryParams.entrySet()) {
-            query.addCondition( 
-                BinaryCondition.equalTo(builderTable.findColumn(entry.getKey()),
-                    entry.getValue()[0])
-            );
-        }
-
-        return query.validate().toString();
+        return builder.toString();
     }
 
     public static String functionQuery(Structure.Routine routine){

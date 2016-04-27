@@ -15,6 +15,11 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
        even SQL server sp_help doesn't know return type when using RETURN, also in t-sql only INOUT parameters exist)
  - [x] Support for user impersonation.
 
+## Improvements
+
+ - [ ] Improve query parameter mapping to table value in
+       PATCH and DELETE methods.
+
 ## Problems to solve
 
  - [x] Find a way to convert a ResultSet to JSON without a one-to-one mapping of table to object.
