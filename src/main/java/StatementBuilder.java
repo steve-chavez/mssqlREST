@@ -5,6 +5,10 @@ import java.util.*;
 import java.io.*;
 import java.nio.charset.*;
 
+// **** IMPORTANT ****
+// The method "statement.setFloat" gets weird results don't know why, example:
+// When Float.parseFloat(entry.getValue()) gives 0.0169
+// statementSetFloat enters the value 0.016899999231100082 in the database
 public class StatementBuilder{
 
     public static PreparedStatement buildPreparedStatement(
@@ -84,7 +88,8 @@ public class StatementBuilder{
                     break;
                 case "float":
                 case "real":
-                    statement.setFloat(i, Float.parseFloat(entry.getValue()));
+                    //statement.setFloat(i, Float.parseFloat(entry.getValue())); 
+                    statement.setDouble(i, Double.parseDouble(entry.getValue()));
                     break;
                 case "char":
                 case "varchar":
@@ -140,7 +145,8 @@ public class StatementBuilder{
                     break;
                 case "float":
                 case "real":
-                    statement.setFloat(i, Float.parseFloat(entry.getValue()));
+                    //statement.setFloat(i, Float.parseFloat(entry.getValue()));
+                    statement.setDouble(i, Double.parseDouble(entry.getValue()));
                     break;
                 case "char":
                 case "varchar":
@@ -184,7 +190,8 @@ public class StatementBuilder{
                     break;
                 case "float":
                 case "real":
-                    statement.setFloat(i, Float.parseFloat(entry.getValue()));
+                    //statement.setFloat(i, Float.parseFloat(entry.getValue()));
+                    statement.setDouble(i, Double.parseDouble(entry.getValue()));
                     break;
                 case "char":
                 case "varchar":
@@ -245,7 +252,8 @@ public class StatementBuilder{
                 case "real":
                     if(parameter.parameterMode.equals("OUT") || parameter.parameterMode.equals("INOUT"))
                         callableStatement.registerOutParameter(parameter.ordinalPosition, java.sql.Types.FLOAT);
-                    callableStatement.setFloat(parameter.ordinalPosition, Float.parseFloat(entry.getValue()));
+                    //callableStatement.setFloat(parameter.ordinalPosition, Float.parseFloat(entry.getValue()));
+                    callableStatement.setDouble(parameter.ordinalPosition, Double.parseDouble(entry.getValue()));
                     break;
                 case "char":
                 case "varchar":
