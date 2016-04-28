@@ -34,7 +34,7 @@ public class ApplicationServer {
             public void handle(Request request, Response response) {
                 response.header("Access-Control-Allow-Origin", "*");
                 response.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-                response.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With");
+                response.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Plurality");
             }
         });
 
@@ -52,7 +52,9 @@ public class ApplicationServer {
                 Collectors.toMap(
                     Map.Entry::getKey, e -> e.getValue()[0]
             ));
-            return tableDAO.selectFrom(request.params(":table"), convertedQueryMap).toString();
+            String plurality = request.headers("Plurality");
+            Boolean singular = plurality!=null?plurality.equals("singular"):false;
+            return tableDAO.selectFrom(request.params(":table"), convertedQueryMap, singular).toString();
         });
 
         Spark.post("/:table", (request, response) -> {

@@ -18,24 +18,24 @@ public class TableDAO{
         this.defaultRole = defaultRole;
     }
     
-    public JSONArray selectFrom(String tableName, Map<String, String> queryParams){
+    public Object selectFrom(String tableName, Map<String, String> queryParams, Boolean singular){
         Structure.Table table = this.getTableMetaData(tableName);
         String query = QueryBuilder.selectQuery(table, queryParams.keySet().toArray(new String[queryParams.size()]));
         System.out.println(query);
-        JSONArray json = new JSONArray();
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
             PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, queryParams);
             ResultSet rs = statement.executeQuery();
-            json = ResultSetJsoner.convert(rs);
+            Object json = ResultSetJsoner.convert(rs, singular);
             conn.commit();
+            return json;
         } catch (SQLException e) {
+            System.out.println(e.getMessage());
             JSONObject obj = new JSONObject();
             obj.put("error", e.getMessage());
-            json.put(obj);
+            return obj;
         }
-        return json;
     }
 
     public Integer insertInto(String tableName, Map<String, String> values){
