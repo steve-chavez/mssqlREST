@@ -48,7 +48,11 @@ public class ApplicationServer {
             System.out.println(request.requestMethod() + " : " + request.url());
             response.status(200);
             response.type("application/json");
-            return tableDAO.selectFrom(request.params(":table")).toString();
+            Map<String, String> convertedQueryMap = request.queryMap().toMap().entrySet().stream().collect(
+                Collectors.toMap(
+                    Map.Entry::getKey, e -> e.getValue()[0]
+            ));
+            return tableDAO.selectFrom(request.params(":table"), convertedQueryMap).toString();
         });
 
         Spark.post("/:table", (request, response) -> {

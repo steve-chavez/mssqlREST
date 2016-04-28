@@ -18,15 +18,15 @@ public class TableDAO{
         this.defaultRole = defaultRole;
     }
     
-    public JSONArray selectFrom(String tableName){
+    public JSONArray selectFrom(String tableName, Map<String, String> queryParams){
         Structure.Table table = this.getTableMetaData(tableName);
-        String query = QueryBuilder.selectQuery(table);
+        String query = QueryBuilder.selectQuery(table, queryParams.keySet().toArray(new String[queryParams.size()]));
         System.out.println(query);
         JSONArray json = new JSONArray();
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
-            PreparedStatement statement = conn.prepareStatement(query);
+            PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, queryParams);
             ResultSet rs = statement.executeQuery();
             json = ResultSetJsoner.convert(rs);
             conn.commit();

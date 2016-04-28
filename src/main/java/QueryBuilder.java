@@ -7,17 +7,26 @@ import java.util.stream.*;
 
 public class QueryBuilder{
 
-    public static String selectQuery(Structure.Table table){
-        DbSpec builderSpec = new DbSpec();
-        DbSchema builderSchema = builderSpec.addDefaultSchema();
-        DbTable builderTable = builderSchema.addTable(table.name);
+    public static String selectQuery(
+            Structure.Table table,
+            String[] params
+        ){
+        StringBuilder builder = new StringBuilder("SELECT * FROM ");
+        builder.append(table.name);
 
-        for (Map.Entry<String, String> entry : table.columns.entrySet()) {
-            builderTable.addColumn(entry.getKey(), entry.getValue(), null);
+        List<String> questionParams = new ArrayList<String>();
+
+
+        for (String param : params) {
+            questionParams.add(param + " = ?");
         }
-        return new SelectQuery()
-            .addAllTableColumns(builderTable)
-            .validate().toString();
+
+        if(questionParams.size()>0){
+            builder.append(" WHERE ");
+            builder.append(questionParams.stream().collect(Collectors.joining(" AND ")));
+        }
+
+        return builder.toString();
     }
 
     public static String insertQuery(Structure.Table table, String[] keys){
