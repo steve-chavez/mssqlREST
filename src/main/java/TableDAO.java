@@ -28,6 +28,7 @@ public class TableDAO{
             PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, queryParams);
             ResultSet rs = statement.executeQuery();
             Object json = ResultSetJsoner.convert(rs, singular);
+            conn.createStatement().execute("REVERT");
             conn.commit();
             return json;
         } catch (SQLException e) {
@@ -51,6 +52,7 @@ public class TableDAO{
             ResultSet rs = statement.getGeneratedKeys();
             if(rs.next())
                 id = rs.getInt(1);
+            conn.createStatement().execute("REVERT");
             conn.commit();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -71,6 +73,7 @@ public class TableDAO{
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
             PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, values, queryParams);
             statement.executeUpdate();
+            conn.createStatement().execute("REVERT");
             conn.commit();
             id = 1;
         } catch (SQLException e) {
@@ -89,6 +92,7 @@ public class TableDAO{
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
             PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, queryParams);
             statement.executeUpdate();
+            conn.createStatement().execute("REVERT");
             conn.commit();
             id = 1;
         } catch (SQLException e) {
@@ -114,6 +118,7 @@ public class TableDAO{
                 cs.execute();
                 obj = ResultSetJsoner.routineResultToJson(routine, cs);
             }
+            conn.createStatement().execute("REVERT");
             conn.commit();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -145,7 +150,6 @@ public class TableDAO{
         String query2 = "SELECT parameter_name, ordinal_position, data_type, parameter_mode FROM information_schema.parameters WHERE specific_name = ?";
         String query3 = "SELECT name, type_name(user_type_id) AS data_type FROM sys.all_columns WHERE object_id = object_id(?)";
         try(Connection conn = this.ds.getConnection()){
-            conn.setAutoCommit(false);
             PreparedStatement statement1 = conn.prepareStatement(query1);
             statement1.setString(1, routineName);
             ResultSet rs1 = statement1.executeQuery();
@@ -176,7 +180,6 @@ public class TableDAO{
                 while(rs3.next())
                     routine.returnColumns.put(rs3.getString("name"), rs3.getString("data_type")); 
             }
-            conn.commit();
         } catch (SQLException e) {
             System.out.println(e.toString());
             //conn.rollback();
