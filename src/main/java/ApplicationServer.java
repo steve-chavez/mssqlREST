@@ -38,11 +38,19 @@ public class ApplicationServer {
             }
         });
 
+        //---------Pre flight---------
         Spark.options("/:table", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
             response.status(200);
             return "OK";
         });
+
+        Spark.options("/rpc/:routine", (request, response) -> {
+            System.out.println(request.requestMethod() + " : " + request.url());
+            response.status(200);
+            return "OK";
+        });
+        //----------------------------
 
         Spark.get("/:table", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
