@@ -38,4 +38,5 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
 - https://github.com/Azure/azure-content/blob/master/articles/sql-database/sql-database-manage-azure-ssms.md
 - https://msdn.microsoft.com/en-us/library/ms181362.aspx
 - https://msdn.microsoft.com/en-us/library/ms173463.aspx
+- [Metadata of return table in stored procedure](http://stackoverflow.com/questions/14574773/retrieve-column-names-and-types-of-a-stored-procedure/14575114#14575114)
 
