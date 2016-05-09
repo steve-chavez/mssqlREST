@@ -17,7 +17,7 @@ public class ApplicationServer {
 		Yaml yaml = new Yaml();
 	
 		Map<String, Object> vals = (Map<String, Object>) yaml
-				.load(new FileInputStream(new File("config.yml")));
+				.load(new FileInputStream(new File("config-production.yml")));
 
         HikariDataSource ds = new HikariDataSource();
         ds.setJdbcUrl(vals.get("url").toString());

@@ -1,0 +1,12 @@
+
+url: jdbc:sqlserver://172.168.201.23:1433;database=RRHH;
+
+user: vadrianzenl
+
+password: victor1427
+    
+defaultRole: planillero
+
+port: 9090
+
+
