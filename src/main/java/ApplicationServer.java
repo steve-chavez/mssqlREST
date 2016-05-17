@@ -44,13 +44,13 @@ public class ApplicationServer {
         Spark.options("/:table", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
             response.status(200);
-            return "OK";
+            return "";
         });
 
         Spark.options("/rpc/:routine", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
             response.status(200);
-            return "OK";
+            return "";
         });
         //----------------------------
 
