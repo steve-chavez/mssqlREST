@@ -1,7 +1,4 @@
 
-import com.healthmarketscience.sqlbuilder.dbspec.basic.*;
-import com.healthmarketscience.sqlbuilder.*;
-
 import java.util.*;
 import java.util.stream.*;
 
@@ -29,20 +26,16 @@ public class QueryBuilder{
         return builder.toString();
     }
 
-    public static String insertQuery(Structure.Table table, String[] keys){
-        DbSpec builderSpec = new DbSpec();
-        DbSchema builderSchema = builderSpec.addDefaultSchema();
-        DbTable builderTable = builderSchema.addTable(table.name);
+    public static String insertQuery(Structure.Table table, List<String> columns){
+        StringBuilder builder = new StringBuilder("INSERT INTO ");
+        builder.append(table.name);
+        builder.append("(");
+        builder.append(columns.stream().collect(Collectors.joining(",")));
+        builder.append(") VALUES(");
+        builder.append(columns.stream().map( s -> "?" ).collect(Collectors.joining(",")));
+        builder.append(")");
 
-        for (Map.Entry<String, String> entry : table.columns.entrySet()) {
-            builderTable.addColumn(entry.getKey(), entry.getValue(), null);
-        }
-
-        InsertQuery query = new InsertQuery(builderTable);
-
-        query.addPreparedColumns(builderTable.findColumns(keys));
-
-        return query.validate().toString();
+        return builder.toString();
     }
 
     public static String updateQuery(
@@ -62,7 +55,6 @@ public class QueryBuilder{
 
         builder.append(questionValues.stream().collect(Collectors.joining(", ")));
 
-        builder.append(" WHERE ");
 
         List<String> questionParams = new ArrayList<String>();
 
@@ -70,7 +62,10 @@ public class QueryBuilder{
             questionParams.add(param + " = ?");
         }
 
-        builder.append(questionParams.stream().collect(Collectors.joining(" AND ")));
+        if(questionParams.size() > 0){
+            builder.append(" WHERE ");
+            builder.append(questionParams.stream().collect(Collectors.joining(" AND ")));
+        }
 
         return builder.toString();
     }
@@ -81,7 +76,6 @@ public class QueryBuilder{
     ){
         StringBuilder builder = new StringBuilder("DELETE FROM ");
         builder.append(table.name);
-        builder.append(" WHERE ");
 
         List<String> questionParams = new ArrayList<String>();
 
@@ -89,7 +83,10 @@ public class QueryBuilder{
             questionParams.add(param + " = ?");
         }
 
-        builder.append(questionParams.stream().collect(Collectors.joining(" AND ")));
+        if(questionParams.size() > 0){
+            builder.append(" WHERE ");
+            builder.append(questionParams.stream().collect(Collectors.joining(" AND ")));
+        }
 
         return builder.toString();
     }

@@ -11,7 +11,7 @@ import java.util.*;
 public class TableDAO{
 
     private DataSource ds;
-    private String defaultRole = "planillero";
+    private String defaultRole;
 
     public TableDAO(DataSource ds, String defaultRole){
         this.ds = ds;
@@ -32,16 +32,16 @@ public class TableDAO{
             conn.commit();
             return json;
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
             JSONObject obj = new JSONObject();
-            obj.put("error", e.getMessage());
+            obj.put("message", e.getMessage());
+            obj.put("code", e.getErrorCode());
             return obj;
         }
     }
 
     public Integer insertInto(String tableName, Map<String, String> values){
         Structure.Table table = this.getTableMetaData(tableName);
-        String query = QueryBuilder.insertQuery(table, values.keySet().toArray(new String[values.size()]));
+        String query = QueryBuilder.insertQuery(table, new ArrayList<String>(values.keySet()));
         System.out.println(query);
         Integer id = 0;
         try(Connection conn = this.ds.getConnection()){
@@ -122,7 +122,8 @@ public class TableDAO{
             conn.commit();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
-            obj.put("error", e.getMessage());
+            obj.put("message", e.getMessage());
+            obj.put("code", e.getErrorCode());
         }
         return obj;
     }
