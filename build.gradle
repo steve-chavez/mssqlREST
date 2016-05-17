@@ -13,10 +13,12 @@ dependencies {
        'com.google.code.gson:gson:1.7.2',
        'org.yaml:snakeyaml:1.17',
        files('./sqljdbc4.jar'),
-       'com.healthmarketscience.common:common-util:1.0.0',
-       'com.healthmarketscience.sqlbuilder:sqlbuilder:2.1.2',
        'com.sparkjava:spark-core:2.3',
-       'com.zaxxer:HikariCP:2.4.5'
+       'com.zaxxer:HikariCP:2.4.5',
+       "org.functionaljava:functionaljava:4.5",
+       "org.functionaljava:functionaljava-java8:4.5",
+       "org.functionaljava:functionaljava-quickcheck:4.5",
+       "org.functionaljava:functionaljava-java-core:4.5"
    )
 }
 

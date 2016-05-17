@@ -10,6 +10,8 @@ import org.yaml.snakeyaml.*;
 
 import com.zaxxer.hikari.*;
 
+import fj.data.Either;
+
 public class ApplicationServer {
 
     public static void main(String[] args) throws FileNotFoundException{
@@ -17,7 +19,7 @@ public class ApplicationServer {
 		Yaml yaml = new Yaml();
 	
 		Map<String, Object> vals = (Map<String, Object>) yaml
-				.load(new FileInputStream(new File("config-production.yml")));
+				.load(new FileInputStream(new File("config-cloud.yml")));
 
         HikariDataSource ds = new HikariDataSource();
         ds.setJdbcUrl(vals.get("url").toString());
@@ -54,57 +56,92 @@ public class ApplicationServer {
 
         Spark.get("/:table", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
-            response.status(200);
-            response.type("application/json");
             Map<String, String> convertedQueryMap = request.queryMap().toMap().entrySet().stream().collect(
                 Collectors.toMap(
                     Map.Entry::getKey, e -> e.getValue()[0]
             ));
             String plurality = request.headers("Plurality");
             Boolean singular = plurality!=null?plurality.equals("singular"):false;
-            return tableDAO.selectFrom(request.params(":table"), convertedQueryMap, singular).toString();
+            Either<Object, Object> result = tableDAO.selectFrom(request.params(":table"), convertedQueryMap, singular);
+            if(result.isRight()){
+                response.type("application/json");
+                response.status(200);
+                return result.right().value().toString();
+            }else{
+                response.type("application/json");
+                response.status(400);
+                return result.left().value().toString();
+            }
         });
 
         Spark.post("/:table", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
             Gson gson = new Gson();
             Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
-            response.status(200);
-            response.type("application/json");
-            return tableDAO.insertInto(request.params(":table"), values);
+            Either<Object, Object> result = tableDAO.insertInto(request.params(":table"), values);
+            if(result.isRight()){
+                response.type("application/json");
+                response.status(200);
+                return result.right().value().toString();
+            }else{
+                response.type("application/json");
+                response.status(400);
+                return result.left().value().toString();
+            }
         });
 
         Spark.patch("/:table", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
             Gson gson = new Gson();
             Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
-            response.status(200);
-            response.type("application/json");
             Map<String, String> convertedQueryMap = request.queryMap().toMap().entrySet().stream().collect(
                 Collectors.toMap(
                     Map.Entry::getKey, e -> e.getValue()[0]
             ));
-            return tableDAO.updateSet(request.params(":table"), values, convertedQueryMap);
+            Either<Object, Object> result = tableDAO.updateSet(request.params(":table"), values, convertedQueryMap);
+            if(result.isRight()){
+                response.type("application/json");
+                response.status(200);
+                return result.right().value().toString();
+            }else{
+                response.type("application/json");
+                response.status(400);
+                return result.left().value().toString();
+            }
         });
 
         Spark.delete("/:table", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
-            response.status(200);
-            response.type("application/json");
             Map<String, String> convertedQueryMap = request.queryMap().toMap().entrySet().stream().collect(
                 Collectors.toMap(
                     Map.Entry::getKey, e -> e.getValue()[0]
             ));
-            return tableDAO.deleteFrom(request.params(":table"), convertedQueryMap);
+            Either<Object, Object> result = tableDAO.deleteFrom(request.params(":table"), convertedQueryMap);
+            if(result.isRight()){
+                response.type("application/json");
+                response.status(200);
+                return result.right().value().toString();
+            }else{
+                response.type("application/json");
+                response.status(400);
+                return result.left().value().toString();
+            }
         });
 
         Spark.post("/rpc/:routine", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
             Gson gson = new Gson();
             Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
-            response.status(200);
-            response.type("application/json");
-            return tableDAO.callRoutine(request.params(":routine"), values).toString();
+            Either<Object, Object> result = tableDAO.callRoutine(request.params(":routine"), values);
+            if(result.isRight()){
+                response.type("application/json");
+                response.status(200);
+                return result.right().value().toString();
+            }else{
+                response.type("application/json");
+                response.status(400);
+                return result.left().value().toString();
+            }
         });
     }
 }

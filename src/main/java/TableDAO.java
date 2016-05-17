@@ -8,6 +8,8 @@ import com.google.gson.*;
 
 import java.util.*;
 
+import fj.data.Either;
+
 public class TableDAO{
 
     private DataSource ds;
@@ -18,7 +20,7 @@ public class TableDAO{
         this.defaultRole = defaultRole;
     }
     
-    public Object selectFrom(String tableName, Map<String, String> queryParams, Boolean singular){
+    public Either<Object, Object> selectFrom(String tableName, Map<String, String> queryParams, Boolean singular){
         Structure.Table table = this.getTableMetaData(tableName);
         String query = QueryBuilder.selectQuery(table, queryParams.keySet().toArray(new String[queryParams.size()]));
         System.out.println(query);
@@ -30,21 +32,21 @@ public class TableDAO{
             Object json = ResultSetJsoner.convert(rs, singular);
             conn.createStatement().execute("REVERT");
             conn.commit();
-            return json;
+            return Either.right(json);
         } catch (SQLException e) {
             JSONObject obj = new JSONObject();
             obj.put("message", e.getMessage());
             obj.put("code", e.getErrorCode());
-            return obj;
+            return Either.left(obj);
         }
     }
 
-    public Integer insertInto(String tableName, Map<String, String> values){
+    public Either<Object, Object> insertInto(String tableName, Map<String, String> values){
         Structure.Table table = this.getTableMetaData(tableName);
         String query = QueryBuilder.insertQuery(table, new ArrayList<String>(values.keySet()));
         System.out.println(query);
-        Integer id = 0;
         try(Connection conn = this.ds.getConnection()){
+            Integer id = 0;
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
             PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, values);
@@ -54,20 +56,22 @@ public class TableDAO{
                 id = rs.getInt(1);
             conn.createStatement().execute("REVERT");
             conn.commit();
+            return Either.right(id);
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            JSONObject obj = new JSONObject();
+            obj.put("message", e.getMessage());
+            obj.put("code", e.getErrorCode());
+            return Either.left(obj);
         }
-        return id;
     }
 
-    public Integer updateSet(String tableName, Map<String, String> values, Map<String, String> queryParams){
+    public Either<Object, Object> updateSet(String tableName, Map<String, String> values, Map<String, String> queryParams){
         Structure.Table table = this.getTableMetaData(tableName);
         String query = QueryBuilder.updateQuery(
                 table, values.keySet().toArray(new String[values.size()]), 
                 queryParams.keySet().toArray(new String[queryParams.size()])
         );
         System.out.println(query);
-        Integer id = 0;
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
@@ -75,18 +79,19 @@ public class TableDAO{
             statement.executeUpdate();
             conn.createStatement().execute("REVERT");
             conn.commit();
-            id = 1;
+            return Either.right("");
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            JSONObject obj = new JSONObject();
+            obj.put("message", e.getMessage());
+            obj.put("code", e.getErrorCode());
+            return Either.left(obj);
         }
-        return id;
     }
 
-    public Integer deleteFrom(String tableName, Map<String, String> queryParams){
+    public Either<Object, Object> deleteFrom(String tableName, Map<String, String> queryParams){
         Structure.Table table = this.getTableMetaData(tableName);
         String query = QueryBuilder.deleteQuery(table, queryParams.keySet().toArray(new String[queryParams.size()]));
         System.out.println(query);
-        Integer id = 0;
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
@@ -94,19 +99,21 @@ public class TableDAO{
             statement.executeUpdate();
             conn.createStatement().execute("REVERT");
             conn.commit();
-            id = 1;
+            return Either.right("");
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            JSONObject obj = new JSONObject();
+            obj.put("message", e.getMessage());
+            obj.put("code", e.getErrorCode());
+            return Either.left(obj);
         }
-        return id;
     }
 
-    public JSONObject callRoutine(String funcName, Map<String, String> values){
-        JSONObject obj = null;
+    public Either<Object, Object> callRoutine(String funcName, Map<String, String> values){
         Structure.Routine routine = this.getRoutineMetaData(funcName);
         String query = QueryBuilder.functionQuery(routine); 
         System.out.println(query);
         try(Connection conn = this.ds.getConnection()){
+            JSONObject obj = new JSONObject();
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
             CallableStatement cs = StatementBuilder.buildCallableStatement(conn, query, routine, values);
@@ -120,12 +127,13 @@ public class TableDAO{
             }
             conn.createStatement().execute("REVERT");
             conn.commit();
+            return Either.right(obj);
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            JSONObject obj = new JSONObject();
             obj.put("message", e.getMessage());
             obj.put("code", e.getErrorCode());
+            return Either.left(obj);
         }
-        return obj;
     }
 
     public Structure.Table getTableMetaData(String tableName){
