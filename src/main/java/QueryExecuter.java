@@ -10,13 +10,13 @@ import java.util.*;
 
 import fj.data.Either;
 
-public class TableDAO{
+public class QueryExecuter{
 
     private DataSource ds;
     private String defaultRole;
     private final String MISSING = "The resource doesn't exist or permission was denied"; 
 
-    public TableDAO(DataSource ds, String defaultRole){
+    public QueryExecuter(DataSource ds, String defaultRole){
         this.ds = ds;
         this.defaultRole = defaultRole;
     }

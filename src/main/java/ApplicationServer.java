@@ -26,7 +26,7 @@ public class ApplicationServer {
         ds.setUsername(vals.get("user").toString());
         ds.setPassword(vals.get("password").toString());
 
-        TableDAO tableDAO = new TableDAO(ds, vals.get("defaultRole").toString());
+        QueryExecuter queryExecuter = new QueryExecuter(ds, vals.get("defaultRole").toString());
 
         Spark.port((Integer)vals.get("port")); 
 
@@ -56,7 +56,7 @@ public class ApplicationServer {
         //
         Spark.get("/", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
-            Either<Object, Object> result = tableDAO.selectAllPrivilegedTables();
+            Either<Object, Object> result = queryExecuter.selectAllPrivilegedTables();
             if(result.isRight()){
                 response.type("application/json");
                 response.status(200);
@@ -76,7 +76,7 @@ public class ApplicationServer {
             ));
             String plurality = request.headers("Plurality");
             Boolean singular = plurality!=null?plurality.equals("singular"):false;
-            Either<Object, Object> result = tableDAO.selectFrom(request.params(":table"), convertedQueryMap, singular);
+            Either<Object, Object> result = queryExecuter.selectFrom(request.params(":table"), convertedQueryMap, singular);
             if(result.isRight()){
                 response.type("application/json");
                 response.status(200);
@@ -92,7 +92,7 @@ public class ApplicationServer {
             System.out.println(request.requestMethod() + " : " + request.url());
             Gson gson = new Gson();
             Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
-            Either<Object, Object> result = tableDAO.insertInto(request.params(":table"), values);
+            Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"), values);
             if(result.isRight()){
                 response.type("application/json");
                 response.status(200);
@@ -112,7 +112,7 @@ public class ApplicationServer {
                 Collectors.toMap(
                     Map.Entry::getKey, e -> e.getValue()[0]
             ));
-            Either<Object, Object> result = tableDAO.updateSet(request.params(":table"), values, convertedQueryMap);
+            Either<Object, Object> result = queryExecuter.updateSet(request.params(":table"), values, convertedQueryMap);
             if(result.isRight()){
                 response.type("application/json");
                 response.status(200);
@@ -130,7 +130,7 @@ public class ApplicationServer {
                 Collectors.toMap(
                     Map.Entry::getKey, e -> e.getValue()[0]
             ));
-            Either<Object, Object> result = tableDAO.deleteFrom(request.params(":table"), convertedQueryMap);
+            Either<Object, Object> result = queryExecuter.deleteFrom(request.params(":table"), convertedQueryMap);
             if(result.isRight()){
                 response.type("application/json");
                 response.status(200);
@@ -146,7 +146,7 @@ public class ApplicationServer {
             System.out.println(request.requestMethod() + " : " + request.url());
             Gson gson = new Gson();
             Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
-            Either<Object, Object> result = tableDAO.callRoutine(request.params(":routine"), values);
+            Either<Object, Object> result = queryExecuter.callRoutine(request.params(":routine"), values);
             if(result.isRight()){
                 response.type("application/json");
                 response.status(200);
