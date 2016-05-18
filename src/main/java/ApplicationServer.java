@@ -53,6 +53,20 @@ public class ApplicationServer {
             return "";
         });
         //----------------------------
+        //
+        Spark.get("/", (request, response) -> {
+            System.out.println(request.requestMethod() + " : " + request.url());
+            Either<Object, Object> result = tableDAO.selectAllPrivilegedTables();
+            if(result.isRight()){
+                response.type("application/json");
+                response.status(200);
+                return result.right().value().toString();
+            }else{
+                response.type("application/json");
+                response.status(400);
+                return result.left().value().toString();
+            }
+        });
 
         Spark.get("/:table", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());

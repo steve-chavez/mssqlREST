@@ -20,7 +20,28 @@ public class TableDAO{
         this.ds = ds;
         this.defaultRole = defaultRole;
     }
-    
+
+    public Either<Object, Object> selectAllPrivilegedTables(){
+        try(Connection conn = this.ds.getConnection()){
+            conn.setAutoCommit(false);
+            conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
+            String query = "SELECT table_schema AS [schema], table_name AS name, CONVERT(BIT, MAX(CASE WHEN privilege_type = 'SELECT' THEN 1 ELSE 0 END )) AS selectable, CONVERT(BIT, MAX(CASE WHEN privilege_type = 'INSERT' THEN 1 ELSE 0 END )) AS insertable, CONVERT(BIT, MAX(CASE WHEN privilege_type = 'UPDATE' THEN 1 ELSE 0 END )) AS updatable, CONVERT(BIT, MAX(CASE WHEN privilege_type = 'DELETE' THEN 1 ELSE 0 END )) AS deletable FROM information_schema.table_privileges WHERE grantee = ? GROUP BY table_schema,table_name";
+            PreparedStatement statement = conn.prepareStatement(query);
+            statement.setString(1, this.defaultRole);
+            System.out.println(query);
+            ResultSet rs = statement.executeQuery();
+            Object json = ResultSetJsoner.convert(rs, false);
+            conn.createStatement().execute("REVERT");
+            conn.commit();
+            return Either.right(json);
+        } catch (SQLException e) {
+            JSONObject obj = new JSONObject();
+            obj.put("message", e.getMessage());
+            obj.put("code", e.getErrorCode());
+            return Either.left(obj);
+        }
+    }
+
     public Either<Object, Object> selectFrom(String tableName, Map<String, String> queryParams, Boolean singular){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
@@ -239,4 +260,5 @@ public class TableDAO{
         }else
             return Optional.empty();
     }
+
 }

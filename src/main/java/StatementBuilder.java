@@ -34,7 +34,8 @@ public class StatementBuilder{
                     break;
                 case "float":
                 case "real":
-                    statement.setFloat(parameter.ordinalPosition, Float.parseFloat(entry.getValue()));
+                    //statement.setFloat(parameter.ordinalPosition, Float.parseFloat(entry.getValue()));
+                    statement.setDouble(parameter.ordinalPosition, Double.parseDouble(entry.getValue()));
                     break;
                 case "char":
                 case "varchar":
