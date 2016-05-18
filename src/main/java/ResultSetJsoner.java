@@ -24,51 +24,7 @@ public class ResultSetJsoner {
             while(rs.next()) {
                 for (int i=1; i<numColumns+1; i++) {
                     String columnName = rsmd.getColumnName(i);
-
-                    switch(rsmd.getColumnType(i)){
-                        case java.sql.Types.ARRAY:
-                            obj.put(columnName, rs.getArray(columnName));
-                            break;
-                        case java.sql.Types.BIGINT:
-                            obj.put(columnName, rs.getInt(columnName));
-                            break;
-                        case java.sql.Types.BOOLEAN:
-                            obj.put(columnName, rs.getBoolean(columnName));
-                            break;
-                        case java.sql.Types.BLOB:
-                            obj.put(columnName, rs.getBlob(columnName));
-                            break;
-                        case java.sql.Types.DOUBLE:
-                            obj.put(columnName, rs.getDouble(columnName));
-                            break;
-                        case java.sql.Types.FLOAT:
-                            obj.put(columnName, rs.getFloat(columnName));
-                            break;
-                        case java.sql.Types.INTEGER:
-                            obj.put(columnName, rs.getInt(columnName));
-                            break;
-                        case java.sql.Types.NVARCHAR:
-                            obj.put(columnName, rs.getNString(columnName));
-                            break;
-                        case java.sql.Types.VARCHAR:
-                            obj.put(columnName, rs.getString(columnName));
-                            break;
-                        case java.sql.Types.TINYINT:
-                            obj.put(columnName, rs.getInt(columnName));
-                            break;
-                        case java.sql.Types.SMALLINT:
-                            obj.put(columnName, rs.getInt(columnName));
-                            break;
-                        case java.sql.Types.DATE:
-                            obj.put(columnName, rs.getDate(columnName));
-                            break;
-                        case java.sql.Types.TIMESTAMP:
-                            obj.put(columnName, rs.getDate(columnName));
-                            break;
-                        default:
-                            obj.put(columnName, rs.getObject(columnName));
-                            break;
-                    }
+                    obj.put(columnName, getColumnValue(rs, columnName, rsmd.getColumnType(i)));
                 }
             }
             return obj;
@@ -76,54 +32,9 @@ public class ResultSetJsoner {
             JSONArray jsonArr = new JSONArray();
             while(rs.next()) {
                 JSONObject obj = new JSONObject();
-
                 for (int i=1; i<numColumns+1; i++) {
                     String columnName = rsmd.getColumnName(i);
-
-                    switch(rsmd.getColumnType(i)){
-                        case java.sql.Types.ARRAY:
-                            obj.put(columnName, rs.getArray(columnName));
-                            break;
-                        case java.sql.Types.BIGINT:
-                            obj.put(columnName, rs.getInt(columnName));
-                            break;
-                        case java.sql.Types.BOOLEAN:
-                            obj.put(columnName, rs.getBoolean(columnName));
-                            break;
-                        case java.sql.Types.BLOB:
-                            obj.put(columnName, rs.getBlob(columnName));
-                            break;
-                        case java.sql.Types.DOUBLE:
-                            obj.put(columnName, rs.getDouble(columnName));
-                            break;
-                        case java.sql.Types.FLOAT:
-                            obj.put(columnName, rs.getFloat(columnName));
-                            break;
-                        case java.sql.Types.INTEGER:
-                            obj.put(columnName, rs.getInt(columnName));
-                            break;
-                        case java.sql.Types.NVARCHAR:
-                            obj.put(columnName, rs.getNString(columnName));
-                            break;
-                        case java.sql.Types.VARCHAR:
-                            obj.put(columnName, rs.getString(columnName));
-                            break;
-                        case java.sql.Types.TINYINT:
-                            obj.put(columnName, rs.getInt(columnName));
-                            break;
-                        case java.sql.Types.SMALLINT:
-                            obj.put(columnName, rs.getInt(columnName));
-                            break;
-                        case java.sql.Types.DATE:
-                            obj.put(columnName, rs.getDate(columnName));
-                            break;
-                        case java.sql.Types.TIMESTAMP:
-                            obj.put(columnName, rs.getDate(columnName));
-                            break;
-                        default:
-                            obj.put(columnName, rs.getObject(columnName));
-                            break;
-                    }
+                    obj.put(columnName, getColumnValue(rs, columnName, rsmd.getColumnType(i)));
                 }
                 jsonArr.put(obj);
             }
@@ -137,10 +48,10 @@ public class ResultSetJsoner {
         JSONObject obj = new JSONObject();
         while(rs.next()) 
             if(!routine.returnType.equals("TABLE"))
-                obj.put("result", getType(routine.returnType, rs, new Integer(1)));
+                obj.put("result", getColumnValue(rs, new Integer(1), routine.returnType));
             else
                 for(Map.Entry<String, String> entry : routine.returnColumns.entrySet()) 
-                    obj.put(entry.getKey(), getType(entry.getValue(), rs, entry.getKey()));
+                    obj.put(entry.getKey(), getColumnValue(rs, entry.getKey(), entry.getValue()));
         return obj;
     }
 
@@ -150,121 +61,184 @@ public class ResultSetJsoner {
         JSONObject obj = new JSONObject();
         for(Map.Entry<String, Structure.Parameter> entry : routine.parameters.entrySet())
             if(entry.getValue().parameterMode.equals("INOUT") || entry.getValue().parameterMode.equals("OUT"))
-                obj.put(entry.getKey(), getType(entry.getValue().dataType, cs, entry.getKey()));
+                obj.put(entry.getKey(), getColumnValue(cs, entry.getKey(), entry.getValue().dataType));
         return obj;
     }
 
-    public static Object getType(String type, ResultSet rs, int index)
-        throws SQLException{
-
+    private static Object getColumnValue(ResultSet rs, String columnName, int type) throws SQLException{
+        Object o;
         switch(type){
-            case "bigint":
-            case "smallint":
-            case "int":
-            case "tinyint":
-                return rs.getInt(index);
-            case "numeric":
-            case "decimal":
-                return rs.getDouble(index);
-            case "float":
-            case "real":
-                return rs.getFloat(index);
-            case "char":
-            case "varchar":
-            case "text":
-                return rs.getString(index);
-            case "nchar":
-            case "nvarchar":
-            case "ntext":
-                return rs.getNString(index);
-            case "binary":
-            case "varbinary":
-            case "image":
-                return rs.getBlob(index);
-            case "date":
-            case "datetime":
-            case "datetime2":
-            case "time":
-            case "timestamp":
-                return rs.getDate(index);
+            case java.sql.Types.ARRAY:
+                o = rs.getArray(columnName);
+                break;
+            case java.sql.Types.BIGINT:
+                o = rs.getInt(columnName);
+                break;
+            case java.sql.Types.BOOLEAN:
+                o = rs.getBoolean(columnName);
+                break;
+            case java.sql.Types.BLOB:
+                o = rs.getBlob(columnName);
+                break;
+            case java.sql.Types.DOUBLE:
+                o = rs.getDouble(columnName);
+                break;
+            case java.sql.Types.FLOAT:
+                o = rs.getFloat(columnName);
+                break;
+            case java.sql.Types.INTEGER:
+                o = rs.getInt(columnName);
+                break;
+            case java.sql.Types.NVARCHAR:
+                o = rs.getNString(columnName);
+                break;
+            case java.sql.Types.VARCHAR:
+                o = rs.getString(columnName);
+                break;
+            case java.sql.Types.TINYINT:
+                o = rs.getInt(columnName);
+                break;
+            case java.sql.Types.SMALLINT:
+                o = rs.getInt(columnName);
+                break;
+            case java.sql.Types.DATE:
+                o = rs.getDate(columnName);
+                break;
+            case java.sql.Types.TIMESTAMP:
+                o = rs.getDate(columnName);
+                break;
             default:
-                return rs.getObject(index);
+                o = rs.getObject(columnName);
+                break;
         }
+        if(rs.wasNull())
+            return JSONObject.NULL;
+        else
+            return o;
     }
 
-    public static Object getType(String type, ResultSet rs, String index)
-        throws SQLException{
 
+    private static Object getColumnValue(ResultSet rs, String index, String type) throws SQLException{
+        Object o;
         switch(type){
             case "bigint":
             case "smallint":
             case "int":
             case "tinyint":
-                return rs.getInt(index);
+                o = rs.getInt(index);
             case "numeric":
             case "decimal":
-                return rs.getDouble(index);
+                o = rs.getDouble(index);
             case "float":
             case "real":
-                return rs.getFloat(index);
+                o = rs.getFloat(index);
             case "char":
             case "varchar":
             case "text":
-                return rs.getString(index);
+                o = rs.getString(index);
             case "nchar":
             case "nvarchar":
             case "ntext":
-                return rs.getNString(index);
+                o = rs.getNString(index);
             case "binary":
             case "varbinary":
             case "image":
-                return rs.getBlob(index);
+                o = rs.getBlob(index);
             case "date":
             case "datetime":
             case "datetime2":
             case "time":
             case "timestamp":
-                return rs.getDate(index);
+                o = rs.getDate(index);
             default:
-                return rs.getObject(index);
+                o = rs.getObject(index);
         }
+        if(rs.wasNull())
+            return JSONObject.NULL;
+        else
+            return o;
     }
 
-    public static Object getType(String type, CallableStatement cs, String index)
-        throws SQLException{
-
+    private static Object getColumnValue(ResultSet rs, int index, String type) throws SQLException{
+        Object o;
         switch(type){
             case "bigint":
             case "smallint":
             case "int":
             case "tinyint":
-                return cs.getInt(index);
+                o = rs.getInt(index);
             case "numeric":
             case "decimal":
-                return cs.getDouble(index);
+                o = rs.getDouble(index);
             case "float":
             case "real":
-                return cs.getFloat(index);
+                o = rs.getFloat(index);
             case "char":
             case "varchar":
             case "text":
-                return cs.getString(index);
+                o = rs.getString(index);
             case "nchar":
             case "nvarchar":
             case "ntext":
-                return cs.getNString(index);
+                o = rs.getNString(index);
             case "binary":
             case "varbinary":
             case "image":
-                return cs.getBlob(index);
+                o = rs.getBlob(index);
             case "date":
             case "datetime":
             case "datetime2":
             case "time":
             case "timestamp":
-                return cs.getDate(index);
+                o = rs.getDate(index);
             default:
-                return cs.getObject(index);
+                o = rs.getObject(index);
         }
+        if(rs.wasNull())
+            return JSONObject.NULL;
+        else
+            return o;
+    }
+
+    private static Object getColumnValue(CallableStatement cs, String index, String type)
+        throws SQLException{
+        Object o;
+        switch(type){
+            case "bigint":
+            case "smallint":
+            case "int":
+            case "tinyint":
+                o = cs.getInt(index);
+            case "numeric":
+            case "decimal":
+                o = cs.getDouble(index);
+            case "float":
+            case "real":
+                o = cs.getFloat(index);
+            case "char":
+            case "varchar":
+            case "text":
+                o = cs.getString(index);
+            case "nchar":
+            case "nvarchar":
+            case "ntext":
+                o = cs.getNString(index);
+            case "binary":
+            case "varbinary":
+            case "image":
+                o = cs.getBlob(index);
+            case "date":
+            case "datetime":
+            case "datetime2":
+            case "time":
+            case "timestamp":
+                o = cs.getDate(index);
+            default:
+                o = cs.getObject(index);
+        }
+        if(cs.wasNull())
+            return JSONObject.NULL;
+        else
+            return o;
     }
 }
