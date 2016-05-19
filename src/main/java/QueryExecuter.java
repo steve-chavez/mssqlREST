@@ -21,6 +21,31 @@ public class QueryExecuter{
         this.defaultRole = defaultRole;
     }
 
+    public Either<Object, Object> selectTableMetaData(String tableName, Boolean singular){
+        try(Connection conn = this.ds.getConnection()){
+            conn.setAutoCommit(false);
+            conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
+            String query = "SELECT CHARACTER_MAXIMUM_LENGTH AS max_length, COLUMN_DEFAULT AS [default],"+
+                " COLUMN_NAME AS name, DATA_TYPE as type,"+
+                " CONVERT(BIT, (CASE WHEN IS_NULLABLE = 'YES' THEN 1 ELSE 0 END)) AS nullable,"+
+                " NUMERIC_PRECISION AS precision, NUMERIC_SCALE AS scale"+
+                " FROM information_schema.columns WHERE table_name = ? ";
+            PreparedStatement statement = conn.prepareStatement(query);
+            statement.setString(1, tableName);
+            System.out.println(query);
+            ResultSet rs = statement.executeQuery();
+            Object json = ResultSetJsoner.convert(rs, singular);
+            conn.createStatement().execute("REVERT");
+            conn.commit();
+            return Either.right(json);
+        } catch (SQLException e) {
+            JSONObject obj = new JSONObject();
+            obj.put("message", e.getMessage());
+            obj.put("code", e.getErrorCode());
+            return Either.left(obj);
+        }
+    }
+
     public Either<Object, Object> selectAllPrivilegedTables(){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
@@ -46,7 +71,7 @@ public class QueryExecuter{
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
-            Optional<Structure.Table> optionalTable = this.getTableMetaData(tableName, conn);
+            Optional<Structure.Table> optionalTable = this.getTableStructure(tableName, conn);
             if(!optionalTable.isPresent()){
                 JSONObject obj = new JSONObject();
                 obj.put("message", MISSING);
@@ -76,7 +101,7 @@ public class QueryExecuter{
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
-            Optional<Structure.Table> optionalTable = this.getTableMetaData(tableName, conn);
+            Optional<Structure.Table> optionalTable = this.getTableStructure(tableName, conn);
             if(!optionalTable.isPresent()){
                 JSONObject obj = new JSONObject();
                 obj.put("message", MISSING);
@@ -109,7 +134,7 @@ public class QueryExecuter{
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
-            Optional<Structure.Table> optionalTable = this.getTableMetaData(tableName, conn);
+            Optional<Structure.Table> optionalTable = this.getTableStructure(tableName, conn);
             if(!optionalTable.isPresent()){
                 JSONObject obj = new JSONObject();
                 obj.put("message", MISSING);
@@ -141,7 +166,7 @@ public class QueryExecuter{
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
-            Optional<Structure.Table> optionalTable = this.getTableMetaData(tableName, conn);
+            Optional<Structure.Table> optionalTable = this.getTableStructure(tableName, conn);
             if(!optionalTable.isPresent()){
                 JSONObject obj = new JSONObject();
                 obj.put("message", MISSING);
@@ -170,7 +195,7 @@ public class QueryExecuter{
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
-            Optional<Structure.Routine> optionalRoutine = this.getRoutineMetaData(funcName, conn);
+            Optional<Structure.Routine> optionalRoutine = this.getRoutineStructure(funcName, conn);
             if(!optionalRoutine.isPresent()){
                 JSONObject obj = new JSONObject();
                 obj.put("message", MISSING);
@@ -203,7 +228,7 @@ public class QueryExecuter{
         }
     }
 
-    public Optional<Structure.Table> getTableMetaData(String tableName, Connection conn) throws SQLException{
+    public Optional<Structure.Table> getTableStructure(String tableName, Connection conn) throws SQLException{
         String query = "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = ?";
         PreparedStatement statement = conn.prepareStatement(query);
         statement.setString(1, tableName);
@@ -220,7 +245,7 @@ public class QueryExecuter{
             return Optional.empty();
     }
 
-    public Optional<Structure.Routine> getRoutineMetaData(String routineName, Connection conn) throws SQLException{
+    public Optional<Structure.Routine> getRoutineStructure(String routineName, Connection conn) throws SQLException{
         Structure.Routine routine = new Structure.Routine();
         String query1 = "SELECT routine_name, routine_type, data_type AS return_type FROM information_schema.routines WHERE routine_name = ?";
         PreparedStatement statement1 = conn.prepareStatement(query1);

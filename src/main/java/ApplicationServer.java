@@ -30,13 +30,15 @@ public class ApplicationServer {
 
         Spark.port((Integer)vals.get("port")); 
 
-        //CORS
+        // Headers:
+        // Plurality: singular, plural
+        // Resource : definition, data
         Spark.before(new Filter() {
             @Override
             public void handle(Request request, Response response) {
                 response.header("Access-Control-Allow-Origin", "*");
                 response.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-                response.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Plurality");
+                response.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Plurality, Resource");
             }
         });
 
@@ -74,17 +76,31 @@ public class ApplicationServer {
                 Collectors.toMap(
                     Map.Entry::getKey, e -> e.getValue()[0]
             ));
-            String plurality = request.headers("Plurality");
-            Boolean singular = plurality!=null?plurality.equals("singular"):false;
-            Either<Object, Object> result = queryExecuter.selectFrom(request.params(":table"), convertedQueryMap, singular);
-            if(result.isRight()){
-                response.type("application/json");
-                response.status(200);
-                return result.right().value().toString();
+            Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
+            Optional<String> plurality = Optional.ofNullable(request.headers("Plurality"));
+            Boolean singular = plurality.isPresent() && plurality.get().equals("singular");
+            if(!resource.isPresent()){
+                Either<Object, Object> result1 = queryExecuter.selectFrom(request.params(":table"), convertedQueryMap, singular);
+                if(result1.isRight()){
+                    response.type("application/json");
+                    response.status(200);
+                    return result1.right().value().toString();
+                }else{
+                    response.type("application/json");
+                    response.status(400);
+                    return result1.left().value().toString();
+                }
             }else{
-                response.type("application/json");
-                response.status(400);
-                return result.left().value().toString();
+                Either<Object, Object> result2 = queryExecuter.selectTableMetaData(request.params(":table"), singular);
+                if(result2.isRight()){
+                    response.type("application/json");
+                    response.status(200);
+                    return result2.right().value().toString();
+                }else{
+                    response.type("application/json");
+                    response.status(400);
+                    return result2.left().value().toString();
+                }
             }
         });
 

@@ -41,4 +41,5 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
 - [Metadata of return table in stored procedure](http://stackoverflow.com/questions/14574773/retrieve-column-names-and-types-of-a-stored-procedure/14575114#14575114)
 - [All Grants](http://stackoverflow.com/questions/497317/how-can-i-view-all-grants-for-an-sql-database)
 - [Constraints](http://stackoverflow.com/questions/14229277/sql-server-2008-get-table-constraints)
+- [Find references to table](http://stackoverflow.com/questions/17501840/how-can-i-find-out-what-foreign-key-constraint-references-a-table-in-sql-server)
 
