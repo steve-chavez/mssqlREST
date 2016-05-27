@@ -34,7 +34,7 @@ public class QueryExecuter{
             statement.setString(1, tableName);
             System.out.println(query);
             ResultSet rs = statement.executeQuery();
-            Object json = ResultSetJsoner.convert(rs, singular);
+            Object json = ResultSetConverter.convert(rs, singular, ResultSetConverter.Format.JSON);
             conn.createStatement().execute("REVERT");
             conn.commit();
             return Either.right(json);
@@ -60,7 +60,7 @@ public class QueryExecuter{
             statement.setString(1, this.defaultRole);
             System.out.println(query);
             ResultSet rs = statement.executeQuery();
-            Object json = ResultSetJsoner.convert(rs, false);
+            Object json = ResultSetConverter.convert(rs, false, ResultSetConverter.Format.JSON);
             conn.createStatement().execute("REVERT");
             conn.commit();
             return Either.right(json);
@@ -72,7 +72,7 @@ public class QueryExecuter{
         }
     }
 
-    public Either<Object, Object> selectFrom(String tableName, Map<String, String> queryParams, Boolean singular){
+    public Either<Object, Object> selectFrom(String tableName, Map<String, String> queryParams, Boolean singular, ResultSetConverter.Format format){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
@@ -89,7 +89,7 @@ public class QueryExecuter{
                 System.out.println(query);
                 PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, queryParams);
                 ResultSet rs = statement.executeQuery();
-                Object json = ResultSetJsoner.convert(rs, singular);
+                Object json = ResultSetConverter.convert(rs, singular, format);
                 conn.createStatement().execute("REVERT");
                 conn.commit();
                 return Either.right(json);
@@ -215,11 +215,11 @@ public class QueryExecuter{
                 CallableStatement cs = StatementBuilder.buildCallableStatement(conn, query, routine, values);
                 if(routine.type.equals("FUNCTION")){
                     ResultSet rs = cs.executeQuery();
-                    obj = ResultSetJsoner.routineResultToJson(routine, rs);
+                    obj = ResultSetConverter.routineResultToJson(routine, rs);
                 }
                 else{
                     cs.execute();
-                    obj = ResultSetJsoner.routineResultToJson(routine, cs);
+                    obj = ResultSetConverter.routineResultToJson(routine, cs);
                 }
                 conn.createStatement().execute("REVERT");
                 conn.commit();

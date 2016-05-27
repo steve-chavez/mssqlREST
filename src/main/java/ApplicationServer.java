@@ -64,7 +64,6 @@ public class ApplicationServer {
                 response.status(200);
                 return result.right().value().toString();
             }else{
-                response.type("application/json");
                 response.status(400);
                 return result.left().value().toString();
             }
@@ -78,15 +77,26 @@ public class ApplicationServer {
             ));
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
             Optional<String> plurality = Optional.ofNullable(request.headers("Plurality"));
+            Optional<String> accept = Optional.ofNullable(request.headers("Accept"));
+
+            ResultSetConverter.Format format;
+            if(accept.isPresent())
+                format = accept.get().equals("text/csv")?ResultSetConverter.Format.CSV:ResultSetConverter.Format.JSON;
+            else
+                format = ResultSetConverter.Format.JSON;
+
             Boolean singular = plurality.isPresent() && plurality.get().equals("singular");
+
             if(!resource.isPresent()){
-                Either<Object, Object> result1 = queryExecuter.selectFrom(request.params(":table"), convertedQueryMap, singular);
+                Either<Object, Object> result1 = queryExecuter.selectFrom(request.params(":table"), convertedQueryMap, singular, format);
                 if(result1.isRight()){
-                    response.type("application/json");
+                    if(format == ResultSetConverter.Format.CSV)
+                        response.type("text/csv");
+                    else
+                        response.type("application/json");
                     response.status(200);
                     return result1.right().value().toString();
                 }else{
-                    response.type("application/json");
                     response.status(400);
                     return result1.left().value().toString();
                 }
@@ -97,7 +107,6 @@ public class ApplicationServer {
                     response.status(200);
                     return result2.right().value().toString();
                 }else{
-                    response.type("application/json");
                     response.status(400);
                     return result2.left().value().toString();
                 }
@@ -114,7 +123,6 @@ public class ApplicationServer {
                 response.status(200);
                 return result.right().value().toString();
             }else{
-                response.type("application/json");
                 response.status(400);
                 return result.left().value().toString();
             }
@@ -134,7 +142,6 @@ public class ApplicationServer {
                 response.status(200);
                 return result.right().value().toString();
             }else{
-                response.type("application/json");
                 response.status(400);
                 return result.left().value().toString();
             }
@@ -152,7 +159,6 @@ public class ApplicationServer {
                 response.status(200);
                 return result.right().value().toString();
             }else{
-                response.type("application/json");
                 response.status(400);
                 return result.left().value().toString();
             }
@@ -168,7 +174,6 @@ public class ApplicationServer {
                 response.status(200);
                 return result.right().value().toString();
             }else{
-                response.type("application/json");
                 response.status(400);
                 return result.left().value().toString();
             }

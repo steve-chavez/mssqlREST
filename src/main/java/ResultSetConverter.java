@@ -3,42 +3,79 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONException;
 
+import com.univocity.parsers.common.processor.*;
+import com.univocity.parsers.conversions.*;
+import com.univocity.parsers.csv.*;
+
 import java.sql.SQLException;
 import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 
 import java.util.*;
+import java.io.*;
 
-public class ResultSetJsoner {
+public class ResultSetConverter {
 
-    public static Object convert( ResultSet rs, Boolean singular )
+    public enum Format{
+        JSON, CSV;
+    }
+
+    public static Object convert( ResultSet rs, Boolean singular, Format format)
         throws SQLException, JSONException {
 
         ResultSetMetaData rsmd = rs.getMetaData();
         int numColumns = rsmd.getColumnCount();
 
-        if(singular){
-            JSONObject obj = new JSONObject();
+        if(format==Format.JSON){
+            if(singular){
+                JSONObject obj = new JSONObject();
 
-            while(rs.next()) {
-                for (int i=1; i<numColumns+1; i++) {
-                    String columnName = rsmd.getColumnName(i);
-                    obj.put(columnName, getColumnValue(rs, columnName, rsmd.getColumnType(i)));
+                while(rs.next()) {
+                    for (int i=1; i<numColumns+1; i++) {
+                        String columnName = rsmd.getColumnName(i);
+                        obj.put(columnName, getColumnValue(rs, columnName, rsmd.getColumnType(i)));
+                    }
                 }
+                return obj;
+            }else{
+                JSONArray jsonArr = new JSONArray();
+                while(rs.next()) {
+                    JSONObject obj = new JSONObject();
+                    for (int i=1; i<numColumns+1; i++) {
+                        String columnName = rsmd.getColumnName(i);
+                        obj.put(columnName, getColumnValue(rs, columnName, rsmd.getColumnType(i)));
+                    }
+                    jsonArr.put(obj);
+                }
+                return jsonArr;
             }
-            return obj;
         }else{
-            JSONArray jsonArr = new JSONArray();
-            while(rs.next()) {
+
+            ByteArrayOutputStream csvResult = new ByteArrayOutputStream();
+            Writer outputWriter = new OutputStreamWriter(csvResult);
+            CsvWriter writer = new CsvWriter(outputWriter, new CsvWriterSettings());
+
+            List<String> headers = new ArrayList<String>();
+
+            for (int i=1; i<numColumns+1; i++){
+                headers.add(rsmd.getColumnName(i));
+            }
+
+            writer.writeHeaders(headers);
+
+            while(rs.next()){
+                List<Object> row = new ArrayList<Object>();
                 JSONObject obj = new JSONObject();
                 for (int i=1; i<numColumns+1; i++) {
                     String columnName = rsmd.getColumnName(i);
-                    obj.put(columnName, getColumnValue(rs, columnName, rsmd.getColumnType(i)));
+                    row.add(getColumnValue(rs, columnName, rsmd.getColumnType(i)));
                 }
-                jsonArr.put(obj);
+                writer.writeRow(row);
             }
-            return jsonArr;
+
+            writer.close();
+            return csvResult.toString();
         }
     }
 

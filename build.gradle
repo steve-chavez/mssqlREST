@@ -18,7 +18,8 @@ dependencies {
        "org.functionaljava:functionaljava:4.5",
        "org.functionaljava:functionaljava-java8:4.5",
        "org.functionaljava:functionaljava-quickcheck:4.5",
-       "org.functionaljava:functionaljava-java-core:4.5"
+       "org.functionaljava:functionaljava-java-core:4.5",
+       "com.univocity:univocity-parsers:1.0.0"
    )
 }
 
