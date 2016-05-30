@@ -135,6 +135,37 @@ public class QueryExecuter{
         }
     }
 
+    public Either<Object, Object> insertInto(String tableName, List<Map<String, String>> values){
+        try(Connection conn = this.ds.getConnection()){
+            conn.setAutoCommit(false);
+            conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
+            Optional<Structure.Table> optionalTable = this.getTableStructure(tableName, conn);
+            if(!optionalTable.isPresent()){
+                JSONObject obj = new JSONObject();
+                obj.put("message", MISSING);
+                conn.createStatement().execute("REVERT");
+                conn.commit();
+                return Either.left(obj);
+            }else{
+                Structure.Table table = optionalTable.get();
+                String query = QueryBuilder.insertQuery(table, new ArrayList<String>(values.get(0).keySet()));
+                System.out.println(query);
+                Integer id = 0;
+                PreparedStatement statement = StatementBuilder.buildBatchPreparedStatement(conn, query, table, values);
+                int[] result = statement.executeBatch();
+                conn.createStatement().execute("REVERT");
+                conn.commit();
+                return Either.right(result);
+            }
+        } catch (SQLException e) {
+            JSONObject obj = new JSONObject();
+            obj.put("message", e.getMessage());
+            obj.put("code", e.getErrorCode());
+            return Either.left(obj);
+        }
+    }
+
+
     public Either<Object, Object> updateSet(String tableName, Map<String, String> values, Map<String, String> queryParams){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);

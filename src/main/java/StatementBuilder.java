@@ -21,7 +21,9 @@ public class StatementBuilder{
         for (Map.Entry<String, String> entry : values.entrySet()) {
             Structure.Parameter parameter = routine.parameters.get(entry.getKey());
             //if(parameter.parameterMode.equals("IN"))
-            switch(parameter.dataType){
+            if(entry.getValue()==null)
+                statement.setObject(parameter.ordinalPosition, entry.getValue());
+            else switch(parameter.dataType){
                 case "bigint":
                 case "smallint":
                 case "int":
@@ -76,7 +78,9 @@ public class StatementBuilder{
         PreparedStatement statement = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         Integer i = 1;
         for (Map.Entry<String, String> entry : values.entrySet()) {
-            switch(table.columns.get(entry.getKey())){
+            if(entry.getValue()==null)
+                statement.setObject(i, entry.getValue());
+            else switch(table.columns.get(entry.getKey())){
                 case "bigint":
                 case "smallint":
                 case "int":
@@ -123,6 +127,67 @@ public class StatementBuilder{
         return statement;
     }
 
+    public static PreparedStatement buildBatchPreparedStatement(
+            Connection conn, 
+            String query, 
+            Structure.Table table,
+            List<Map<String, String>> valuesList
+    ) throws SQLException{
+        PreparedStatement statement = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+        for(Map<String, String> values:valuesList){
+            Integer i = 1;
+            for (Map.Entry<String, String> entry : values.entrySet()) {
+                if(entry.getValue()==null)
+                    statement.setObject(i, entry.getValue());
+                else switch(table.columns.get(entry.getKey())){
+                    case "bigint":
+                    case "smallint":
+                    case "int":
+                    case "tinyint":
+                        statement.setInt(i, Integer.parseInt(entry.getValue()));
+                        break;
+                    case "numeric":
+                    case "decimal":
+                        statement.setDouble(i, Double.parseDouble(entry.getValue()));
+                        break;
+                    case "float":
+                    case "real":
+                        //statement.setFloat(i, Float.parseFloat(entry.getValue())); 
+                        statement.setDouble(i, Double.parseDouble(entry.getValue()));
+                        break;
+                    case "char":
+                    case "varchar":
+                    case "text":
+                        statement.setString(i, entry.getValue());
+                        break;
+                    case "nchar":
+                    case "nvarchar":
+                    case "ntext":
+                        statement.setNString(i, entry.getValue());
+                        break;
+                    case "date":
+                    case "datetime":
+                    case "datetime2":
+                    case "time":
+                    case "timestamp":
+                        statement.setString(i, entry.getValue());
+                        break;
+                    case "binary":
+                    case "varbinary":
+                    case "image":
+                        statement.setBlob(i, new ByteArrayInputStream(entry.getValue().getBytes(StandardCharsets.UTF_8)));
+                        break;
+                    default:
+                        statement.setObject(i, entry.getValue());
+                        break;
+                }
+                i++;
+            }
+            statement.addBatch();
+        }
+        return statement;
+    }
+
     public static PreparedStatement buildPreparedStatement(
             Connection conn, 
             String query, 
@@ -133,7 +198,9 @@ public class StatementBuilder{
         PreparedStatement statement = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         Integer i = 1;
         for (Map.Entry<String, String> entry : values.entrySet()) {
-            switch(table.columns.get(entry.getKey())){
+            if(entry.getValue()==null)
+                statement.setObject(i, entry.getValue());
+            else switch(table.columns.get(entry.getKey())){
                 case "bigint":
                 case "smallint":
                 case "int":
@@ -178,7 +245,9 @@ public class StatementBuilder{
             i++;
         }
         for (Map.Entry<String, String> entry : queryParams.entrySet()) {
-            switch(table.columns.get(entry.getKey())){
+            if(entry.getValue()==null)
+                statement.setObject(i, entry.getValue());
+            else switch(table.columns.get(entry.getKey())){
                 case "bigint":
                 case "smallint":
                 case "int":
@@ -234,6 +303,8 @@ public class StatementBuilder{
         CallableStatement callableStatement = conn.prepareCall(query);
         for (Map.Entry<String, String> entry : values.entrySet()) {
             Structure.Parameter parameter = routine.parameters.get(entry.getKey());
+            if(entry.getValue()==null)
+                callableStatement.setObject(parameter.ordinalPosition, entry.getValue());
             switch(parameter.dataType){
                 case "bigint":
                 case "smallint":

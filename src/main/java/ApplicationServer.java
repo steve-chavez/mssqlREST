@@ -3,6 +3,10 @@ import spark.*;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.Gson;
 
+import com.univocity.parsers.common.processor.*;
+import com.univocity.parsers.conversions.*;
+import com.univocity.parsers.csv.*;
+
 import java.util.*;
 import java.util.stream.*;
 import java.io.*;
@@ -13,6 +17,22 @@ import com.zaxxer.hikari.*;
 import fj.data.Either;
 
 public class ApplicationServer {
+
+    private static List<Map<String, String>> convertCSV(List<String[]> rows){
+        List<Map<String, String>> mappedValues = 
+            new ArrayList<Map<String, String>>();
+        String[] headers = rows.get(0);
+        int length = headers.length;
+        for(int i=1; i < rows.size(); i++){
+            String[] values = rows.get(i);
+            Map<String, String> attr = new HashMap<String, String>();
+            for(int j=0; j<length; j++){
+                attr.put(headers[j], values[j]);
+            }
+            mappedValues.add(attr);
+        }
+        return mappedValues;
+    }
 
     public static void main(String[] args) throws FileNotFoundException{
 
@@ -97,6 +117,7 @@ public class ApplicationServer {
                     response.status(200);
                     return result1.right().value().toString();
                 }else{
+                    response.type("application/json");
                     response.status(400);
                     return result1.left().value().toString();
                 }
@@ -107,6 +128,7 @@ public class ApplicationServer {
                     response.status(200);
                     return result2.right().value().toString();
                 }else{
+                    response.type("application/json");
                     response.status(400);
                     return result2.left().value().toString();
                 }
@@ -115,16 +137,41 @@ public class ApplicationServer {
 
         Spark.post("/:table", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
-            Gson gson = new Gson();
-            Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
-            Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"), values);
-            if(result.isRight()){
-                response.type("application/json");
-                response.status(200);
-                return result.right().value().toString();
+
+            Optional<String> contentType = Optional.ofNullable(request.headers("Content-Type"));
+
+            ResultSetConverter.Format format;
+            if(contentType.isPresent())
+                format = contentType.get().equals("text/csv")?ResultSetConverter.Format.CSV:ResultSetConverter.Format.JSON;
+            else
+                format = ResultSetConverter.Format.JSON;
+
+            if(format==ResultSetConverter.Format.JSON){
+                Gson gson = new Gson();
+                Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
+                Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"), values);
+                if(result.isRight()){
+                    response.type("application/json");
+                    response.status(200);
+                    return result.right().value().toString();
+                }else{
+                    response.type("application/json");
+                    response.status(400);
+                    return result.left().value().toString();
+                }
             }else{
-                response.status(400);
-                return result.left().value().toString();
+                CsvParser parser = new CsvParser(new CsvParserSettings());
+                List<Map<String, String>> mappedValues = convertCSV(parser.parseAll(new StringReader(request.body())));
+                Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"), mappedValues);
+                if(result.isRight()){
+                    response.type("application/json");
+                    response.status(200);
+                    return result.right().value().toString();
+                }else{
+                    response.type("application/json");
+                    response.status(400);
+                    return result.left().value().toString();
+                }
             }
         });
 
@@ -142,6 +189,7 @@ public class ApplicationServer {
                 response.status(200);
                 return result.right().value().toString();
             }else{
+                response.type("application/json");
                 response.status(400);
                 return result.left().value().toString();
             }
@@ -159,6 +207,7 @@ public class ApplicationServer {
                 response.status(200);
                 return result.right().value().toString();
             }else{
+                response.type("application/json");
                 response.status(400);
                 return result.left().value().toString();
             }
@@ -174,6 +223,7 @@ public class ApplicationServer {
                 response.status(200);
                 return result.right().value().toString();
             }else{
+                response.type("application/json");
                 response.status(400);
                 return result.left().value().toString();
             }

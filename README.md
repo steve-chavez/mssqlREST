@@ -14,6 +14,9 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
  - [x] Support for PROCEDURE(Only OUT parameters as result,
        even SQL server sp_help doesn't know return type when using RETURN, also in t-sql only INOUT parameters exist)
  - [x] Support for user impersonation.
+ - [x] Support for GET with CSV response.
+ - [x] Support for POST with CSV Content-Type.
+ - [x] Support for explicit nulls in requests. 
 
 ## Improvements
 
@@ -42,4 +45,5 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
 - [All Grants](http://stackoverflow.com/questions/497317/how-can-i-view-all-grants-for-an-sql-database)
 - [Constraints](http://stackoverflow.com/questions/14229277/sql-server-2008-get-table-constraints)
 - [Find references to table](http://stackoverflow.com/questions/17501840/how-can-i-find-out-what-foreign-key-constraint-references-a-table-in-sql-server)
-
+- [Download file in client](http://stackoverflow.com/questions/3665115/create-a-file-in-memory-for-user-to-download-not-through-server/18197341?noredirect=1#answer-3665147)
+- [JDBC](http://stackoverflow.com/questions/17657057/workaround-for-null-primitives-in-jdbc-preparedstatement)
