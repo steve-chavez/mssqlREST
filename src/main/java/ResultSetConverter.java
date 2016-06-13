@@ -79,27 +79,27 @@ public class ResultSetConverter {
         }
     }
 
-    public static JSONObject routineResultToJson( Structure.Routine routine, ResultSet rs)
+    public static Map<String, Object> routineResultToMap( Structure.Routine routine, ResultSet rs)
         throws SQLException, JSONException {
 
-        JSONObject obj = new JSONObject();
+        Map<String, Object> map = new HashMap<String, Object>();
         while(rs.next()) 
             if(!routine.returnType.equals("TABLE"))
-                obj.put("result", getColumnValue(rs, new Integer(1), routine.returnType));
+                map.put("result", getColumnValue(rs, new Integer(1), routine.returnType));
             else
                 for(Map.Entry<String, String> entry : routine.returnColumns.entrySet()) 
-                    obj.put(entry.getKey(), getColumnValue(rs, entry.getKey(), entry.getValue()));
-        return obj;
+                    map.put(entry.getKey(), getColumnValue(rs, entry.getKey(), entry.getValue()));
+        return map;
     }
 
-    public static JSONObject routineResultToJson( Structure.Routine routine, CallableStatement cs)
+    public static Map<String, Object> routineResultToMap( Structure.Routine routine, CallableStatement cs)
         throws SQLException, JSONException {
 
-        JSONObject obj = new JSONObject();
+        Map<String, Object> map = new HashMap<String, Object>();
         for(Map.Entry<String, Structure.Parameter> entry : routine.parameters.entrySet())
             if(entry.getValue().parameterMode.equals("INOUT") || entry.getValue().parameterMode.equals("OUT"))
-                obj.put(entry.getKey(), getColumnValue(cs, entry.getKey(), entry.getValue().dataType));
-        return obj;
+                map.put(entry.getKey(), getColumnValue(cs, entry.getKey(), entry.getValue().dataType));
+        return map;
     }
 
     private static Object getColumnValue(ResultSet rs, String columnName, int type) throws SQLException{

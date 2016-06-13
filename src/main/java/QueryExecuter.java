@@ -21,10 +21,13 @@ public class QueryExecuter{
         this.defaultRole = defaultRole;
     }
 
-    public Either<Object, Object> selectTableMetaData(String tableName, Boolean singular){
+    public Either<Object, Object> selectTableMetaData(String tableName, Boolean singular, Optional<String> role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
-            conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
+            if(role.isPresent())
+                conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
+            else
+                conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
             String query = "SELECT CHARACTER_MAXIMUM_LENGTH AS max_length, COLUMN_DEFAULT AS [default],"+
                 " COLUMN_NAME AS name, DATA_TYPE as type,"+
                 " CONVERT(BIT, (CASE WHEN IS_NULLABLE = 'YES' THEN 1 ELSE 0 END)) AS nullable,"+
@@ -46,10 +49,13 @@ public class QueryExecuter{
         }
     }
 
-    public Either<Object, Object> selectAllPrivilegedTables(){
+    public Either<Object, Object> selectAllPrivilegedTables(Optional<String> role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
-            conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
+            if(role.isPresent())
+                conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
+            else
+                conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
             String query = "SELECT table_schema AS [schema], table_name AS name, " +
                 "CONVERT(BIT, MAX(CASE WHEN privilege_type = 'SELECT' THEN 1 ELSE 0 END )) AS selectable,"+
                 " CONVERT(BIT, MAX(CASE WHEN privilege_type = 'INSERT' THEN 1 ELSE 0 END )) AS insertable,"+
@@ -72,10 +78,14 @@ public class QueryExecuter{
         }
     }
 
-    public Either<Object, Object> selectFrom(String tableName, Map<String, String> queryParams, Boolean singular, ResultSetConverter.Format format){
+    public Either<Object, Object> selectFrom(String tableName, Map<String, String> queryParams, Boolean singular, ResultSetConverter.Format format,
+            Optional<String> role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
-            conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
+            if(role.isPresent())
+                conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
+            else
+                conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
             Optional<Structure.Table> optionalTable = this.getTableStructure(tableName, conn);
             if(!optionalTable.isPresent()){
                 JSONObject obj = new JSONObject();
@@ -102,10 +112,13 @@ public class QueryExecuter{
         }
     }
 
-    public Either<Object, Object> insertInto(String tableName, Map<String, String> values){
+    public Either<Object, Object> insertInto(String tableName, Map<String, String> values, Optional<String> role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
-            conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
+            if(role.isPresent())
+                conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
+            else
+                conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
             Optional<Structure.Table> optionalTable = this.getTableStructure(tableName, conn);
             if(!optionalTable.isPresent()){
                 JSONObject obj = new JSONObject();
@@ -135,10 +148,13 @@ public class QueryExecuter{
         }
     }
 
-    public Either<Object, Object> insertInto(String tableName, List<Map<String, String>> values){
+    public Either<Object, Object> insertInto(String tableName, List<Map<String, String>> values, Optional<String> role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
-            conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
+            if(role.isPresent())
+                conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
+            else
+                conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
             Optional<Structure.Table> optionalTable = this.getTableStructure(tableName, conn);
             if(!optionalTable.isPresent()){
                 JSONObject obj = new JSONObject();
@@ -166,10 +182,13 @@ public class QueryExecuter{
     }
 
 
-    public Either<Object, Object> updateSet(String tableName, Map<String, String> values, Map<String, String> queryParams){
+    public Either<Object, Object> updateSet(String tableName, Map<String, String> values, Map<String, String> queryParams, Optional<String> role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
-            conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
+            if(role.isPresent())
+                conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
+            else
+                conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
             Optional<Structure.Table> optionalTable = this.getTableStructure(tableName, conn);
             if(!optionalTable.isPresent()){
                 JSONObject obj = new JSONObject();
@@ -198,10 +217,13 @@ public class QueryExecuter{
         }
     }
 
-    public Either<Object, Object> deleteFrom(String tableName, Map<String, String> queryParams){
+    public Either<Object, Object> deleteFrom(String tableName, Map<String, String> queryParams, Optional<String> role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
-            conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
+            if(role.isPresent())
+                conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
+            else
+                conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
             Optional<Structure.Table> optionalTable = this.getTableStructure(tableName, conn);
             if(!optionalTable.isPresent()){
                 JSONObject obj = new JSONObject();
@@ -227,13 +249,16 @@ public class QueryExecuter{
         }
     }
 
-    public Either<Object, Object> callRoutine(String funcName, Map<String, String> values){
+    public Either<Map<String, Object>, Map<String, Object>> callRoutine(String funcName, Map<String, String> values, Optional<String> role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
-            conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
+            if(role.isPresent())
+                conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
+            else
+                conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
             Optional<Structure.Routine> optionalRoutine = this.getRoutineStructure(funcName, conn);
             if(!optionalRoutine.isPresent()){
-                JSONObject obj = new JSONObject();
+                Map<String, Object> obj = new HashMap<String, Object>();
                 obj.put("message", MISSING);
                 conn.createStatement().execute("REVERT");
                 conn.commit();
@@ -242,22 +267,22 @@ public class QueryExecuter{
                 Structure.Routine routine = optionalRoutine.get();
                 String query = QueryBuilder.functionQuery(routine); 
                 System.out.println(query);
-                JSONObject obj = new JSONObject();
+                Map<String, Object> obj = new HashMap<String, Object>();
                 CallableStatement cs = StatementBuilder.buildCallableStatement(conn, query, routine, values);
                 if(routine.type.equals("FUNCTION")){
                     ResultSet rs = cs.executeQuery();
-                    obj = ResultSetConverter.routineResultToJson(routine, rs);
+                    obj = ResultSetConverter.routineResultToMap(routine, rs);
                 }
                 else{
                     cs.execute();
-                    obj = ResultSetConverter.routineResultToJson(routine, cs);
+                    obj = ResultSetConverter.routineResultToMap(routine, cs);
                 }
                 conn.createStatement().execute("REVERT");
                 conn.commit();
                 return Either.right(obj);
             }
         } catch (SQLException e) {
-            JSONObject obj = new JSONObject();
+            Map<String, Object> obj = new HashMap<String, Object>();
             obj.put("message", e.getMessage());
             obj.put("code", e.getErrorCode());
             return Either.left(obj);

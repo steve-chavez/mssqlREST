@@ -26,7 +26,8 @@ public class Structure{
         public String toString(){
             return name + " : " + 
                 String.join(",", Arrays.asList(type, returnType)) +
-                "; parameters : " + parameters.toString();
+                "; parameters : " + parameters.toString() +
+                "; returnColumns : " + returnColumns.toString();
         }
     }
 
