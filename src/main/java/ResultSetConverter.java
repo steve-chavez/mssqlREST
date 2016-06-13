@@ -87,8 +87,9 @@ public class ResultSetConverter {
             if(!routine.returnType.equals("TABLE"))
                 map.put("result", getColumnValue(rs, new Integer(1), routine.returnType));
             else
-                for(Map.Entry<String, String> entry : routine.returnColumns.entrySet()) 
+                for(Map.Entry<String, String> entry : routine.returnColumns.entrySet()) {
                     map.put(entry.getKey(), getColumnValue(rs, entry.getKey(), entry.getValue()));
+                }
         return map;
     }
 
@@ -155,40 +156,48 @@ public class ResultSetConverter {
     }
 
 
-    private static Object getColumnValue(ResultSet rs, String index, String type) throws SQLException{
+    private static Object getColumnValue(ResultSet rs, String columnName, String type) throws SQLException{
         Object o;
         switch(type){
             case "bigint":
             case "smallint":
             case "int":
             case "tinyint":
-                o = rs.getInt(index);
+                o = rs.getInt(columnName);
+                break;
             case "numeric":
             case "decimal":
-                o = rs.getDouble(index);
+                o = rs.getDouble(columnName);
+                break;
             case "float":
             case "real":
-                o = rs.getFloat(index);
+                o = rs.getFloat(columnName);
+                break;
             case "char":
             case "varchar":
             case "text":
-                o = rs.getString(index);
+                o = rs.getString(columnName);
+                break;
             case "nchar":
             case "nvarchar":
             case "ntext":
-                o = rs.getNString(index);
+                o = rs.getNString(columnName);
+                break;
             case "binary":
             case "varbinary":
             case "image":
-                o = rs.getBlob(index);
+                o = rs.getBlob(columnName);
+                break;
             case "date":
             case "datetime":
             case "datetime2":
             case "time":
             case "timestamp":
-                o = rs.getDate(index);
+                o = rs.getDate(columnName);
+                break;
             default:
-                o = rs.getObject(index);
+                o = rs.getObject(columnName);
+                break;
         }
         if(rs.wasNull())
             return JSONObject.NULL;
@@ -204,32 +213,40 @@ public class ResultSetConverter {
             case "int":
             case "tinyint":
                 o = rs.getInt(index);
+                break;
             case "numeric":
             case "decimal":
                 o = rs.getDouble(index);
+                break;
             case "float":
             case "real":
                 o = rs.getFloat(index);
+                break;
             case "char":
             case "varchar":
             case "text":
                 o = rs.getString(index);
+                break;
             case "nchar":
             case "nvarchar":
             case "ntext":
                 o = rs.getNString(index);
+                break;
             case "binary":
             case "varbinary":
             case "image":
                 o = rs.getBlob(index);
+                break;
             case "date":
             case "datetime":
             case "datetime2":
             case "time":
             case "timestamp":
                 o = rs.getDate(index);
+                break;
             default:
                 o = rs.getObject(index);
+                break;
         }
         if(rs.wasNull())
             return JSONObject.NULL;
@@ -246,32 +263,40 @@ public class ResultSetConverter {
             case "int":
             case "tinyint":
                 o = cs.getInt(index);
+                break;
             case "numeric":
             case "decimal":
                 o = cs.getDouble(index);
+                break;
             case "float":
             case "real":
                 o = cs.getFloat(index);
+                break;
             case "char":
             case "varchar":
             case "text":
                 o = cs.getString(index);
+                break;
             case "nchar":
             case "nvarchar":
             case "ntext":
                 o = cs.getNString(index);
+                break;
             case "binary":
             case "varbinary":
             case "image":
                 o = cs.getBlob(index);
+                break;
             case "date":
             case "datetime":
             case "datetime2":
             case "time":
             case "timestamp":
                 o = cs.getDate(index);
+                break;
             default:
                 o = cs.getObject(index);
+                break;
         }
         if(cs.wasNull())
             return JSONObject.NULL;
