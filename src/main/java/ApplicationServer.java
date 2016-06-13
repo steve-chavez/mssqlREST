@@ -109,14 +109,6 @@ public class ApplicationServer {
             }
         });
 
-        Spark.get("/test/jwt", (request, response) -> {
-            String s = Jwts.builder()
-                .claim("email", "ctm@gmail.com")
-                .claim("role", "controlador")
-                .signWith(SignatureAlgorithm.HS256, secret).compact();
-            return s;
-        });
-
         //---------Pre flight---------
         Spark.options("/:table", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
