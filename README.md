@@ -17,6 +17,7 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
  - [x] Support for GET with CSV response.
  - [x] Support for POST with CSV Content-Type.
  - [x] Support for explicit nulls in request body. 
+ - [x] Support for jwt encoding and decoding. 
 
 ## Improvements
 
