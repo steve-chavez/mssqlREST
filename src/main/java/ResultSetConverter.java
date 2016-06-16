@@ -98,7 +98,7 @@ public class ResultSetConverter {
 
         Map<String, Object> map = new HashMap<String, Object>();
         for(Map.Entry<String, Structure.Parameter> entry : routine.parameters.entrySet())
-            if(entry.getValue().parameterMode.equals("INOUT") || entry.getValue().parameterMode.equals("OUT"))
+            if(entry.getValue().parameterMode.equals("INOUT"))
                 map.put(entry.getKey(), getColumnValue(cs, entry.getKey(), entry.getValue().dataType));
         return map;
     }

@@ -48,3 +48,6 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
 - [Find references to table](http://stackoverflow.com/questions/17501840/how-can-i-find-out-what-foreign-key-constraint-references-a-table-in-sql-server)
 - [Download file in client](http://stackoverflow.com/questions/3665115/create-a-file-in-memory-for-user-to-download-not-through-server/18197341?noredirect=1#answer-3665147)
 - [JDBC](http://stackoverflow.com/questions/17657057/workaround-for-null-primitives-in-jdbc-preparedstatement)
+- [Function default](http://stackoverflow.com/questions/8358315/t-sql-function-with-default-parameters)
+- [Stored procedure default obtain](http://stackoverflow.com/questions/14652361/determine-whether-sp-parameter-has-a-default-value-in-t-sql)
+

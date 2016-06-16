@@ -304,41 +304,31 @@ public class StatementBuilder{
         for (Map.Entry<String, String> entry : values.entrySet()) {
             Structure.Parameter parameter = routine.parameters.get(entry.getKey());
             if(entry.getValue()==null)
-                callableStatement.setObject(parameter.ordinalPosition, entry.getValue());
+                callableStatement.setObject(parameter.ordinalPosition, null);
             switch(parameter.dataType){
                 case "bigint":
                 case "smallint":
                 case "int":
                 case "tinyint":
-                    if(parameter.parameterMode.equals("OUT") || parameter.parameterMode.equals("INOUT"))
-                        callableStatement.registerOutParameter(parameter.ordinalPosition, java.sql.Types.INTEGER);
                     callableStatement.setInt(parameter.ordinalPosition, Integer.parseInt(entry.getValue()));
                     break;
                 case "numeric":
                 case "decimal":
-                    if(parameter.parameterMode.equals("OUT") || parameter.parameterMode.equals("INOUT"))
-                        callableStatement.registerOutParameter(parameter.ordinalPosition, java.sql.Types.DOUBLE);
                     callableStatement.setDouble(parameter.ordinalPosition, Double.parseDouble(entry.getValue()));
                     break;
                 case "float":
                 case "real":
-                    if(parameter.parameterMode.equals("OUT") || parameter.parameterMode.equals("INOUT"))
-                        callableStatement.registerOutParameter(parameter.ordinalPosition, java.sql.Types.FLOAT);
                     //callableStatement.setFloat(parameter.ordinalPosition, Float.parseFloat(entry.getValue()));
                     callableStatement.setDouble(parameter.ordinalPosition, Double.parseDouble(entry.getValue()));
                     break;
                 case "char":
                 case "varchar":
                 case "text":
-                    if(parameter.parameterMode.equals("OUT") || parameter.parameterMode.equals("INOUT"))
-                        callableStatement.registerOutParameter(parameter.ordinalPosition, java.sql.Types.VARCHAR);
                     callableStatement.setString(parameter.ordinalPosition, entry.getValue());
                     break;
                 case "nchar":
                 case "nvarchar":
                 case "ntext":
-                    if(parameter.parameterMode.equals("OUT") || parameter.parameterMode.equals("INOUT"))
-                        callableStatement.registerOutParameter(parameter.ordinalPosition, java.sql.Types.NVARCHAR);
                     callableStatement.setNString(parameter.ordinalPosition, entry.getValue());
                     break;
                 case "date":
@@ -346,23 +336,63 @@ public class StatementBuilder{
                 case "datetime2":
                 case "time":
                 case "timestamp":
-                    if(parameter.parameterMode.equals("OUT") || parameter.parameterMode.equals("INOUT"))
-                        callableStatement.registerOutParameter(parameter.ordinalPosition, java.sql.Types.DATE);
                     callableStatement.setString(parameter.ordinalPosition, entry.getValue());
                     break;
                 case "binary":
                 case "varbinary":
                 case "image":
-                    if(parameter.parameterMode.equals("OUT") || parameter.parameterMode.equals("INOUT"))
-                        callableStatement.registerOutParameter(parameter.ordinalPosition, java.sql.Types.BLOB);
                     callableStatement.setBlob(parameter.ordinalPosition,
                         new ByteArrayInputStream(entry.getValue().getBytes(StandardCharsets.UTF_8)));
                     break;
                 default:
-                    if(parameter.parameterMode.equals("OUT") || parameter.parameterMode.equals("INOUT"))
-                        callableStatement.registerOutParameter(parameter.ordinalPosition, java.sql.Types.JAVA_OBJECT);
                     callableStatement.setObject(parameter.ordinalPosition, entry.getValue());
                     break;
+            }
+        }
+        for (Map.Entry<String, Structure.Parameter> entry : routine.parameters.entrySet()) {
+            Structure.Parameter parameter = entry.getValue();
+            if(parameter.parameterMode.equals("INOUT")){
+                switch(parameter.dataType){
+                    case "bigint":
+                    case "smallint":
+                    case "int":
+                    case "tinyint":
+                        callableStatement.registerOutParameter(parameter.ordinalPosition, java.sql.Types.INTEGER);
+                        break;
+                    case "numeric":
+                    case "decimal":
+                        callableStatement.registerOutParameter(parameter.ordinalPosition, java.sql.Types.DOUBLE);
+                        break;
+                    case "float":
+                    case "real":
+                        callableStatement.registerOutParameter(parameter.ordinalPosition, java.sql.Types.FLOAT);
+                        break;
+                    case "char":
+                    case "varchar":
+                    case "text":
+                        callableStatement.registerOutParameter(parameter.ordinalPosition, java.sql.Types.VARCHAR);
+                        break;
+                    case "nchar":
+                    case "nvarchar":
+                    case "ntext":
+                        callableStatement.registerOutParameter(parameter.ordinalPosition, java.sql.Types.NVARCHAR);
+                        break;
+                    case "date":
+                    case "datetime":
+                    case "datetime2":
+                    case "time":
+                    case "timestamp":
+                        callableStatement.registerOutParameter(parameter.ordinalPosition, java.sql.Types.DATE);
+                        break;
+                    case "binary":
+                    case "varbinary":
+                    case "image":
+                        callableStatement.registerOutParameter(parameter.ordinalPosition, java.sql.Types.BLOB);
+                        break;
+                    default:
+                        callableStatement.registerOutParameter(parameter.ordinalPosition, java.sql.Types.JAVA_OBJECT);
+                        break;
+                }
             }
         }
         return callableStatement;

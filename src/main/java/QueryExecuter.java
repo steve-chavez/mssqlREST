@@ -249,7 +249,10 @@ public class QueryExecuter{
         }
     }
 
-    public Either<Map<String, Object>, Map<String, Object>> callRoutine(String funcName, Map<String, String> values, Optional<String> role){
+    public Either<Map<String, Object>, Map<String, Object>> callRoutine(
+        String funcName, Map<String, String> values, 
+        Optional<String> role){
+
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             if(role.isPresent())
@@ -258,34 +261,35 @@ public class QueryExecuter{
                 conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
             Optional<Structure.Routine> optionalRoutine = this.getRoutineStructure(funcName, conn);
             if(!optionalRoutine.isPresent()){
-                Map<String, Object> obj = new HashMap<String, Object>();
-                obj.put("message", MISSING);
+                Map<String, Object> map = new HashMap<String, Object>();
+                map.put("message", MISSING);
                 conn.createStatement().execute("REVERT");
                 conn.commit();
-                return Either.left(obj);
+                return Either.left(map);
             }else{
                 Structure.Routine routine = optionalRoutine.get();
                 String query = QueryBuilder.functionQuery(routine); 
                 System.out.println(query);
-                Map<String, Object> obj = new HashMap<String, Object>();
-                CallableStatement cs = StatementBuilder.buildCallableStatement(conn, query, routine, values);
+                Map<String, Object> map = new HashMap<String, Object>();
+                CallableStatement cs = StatementBuilder
+                    .buildCallableStatement(conn, query, routine, values);
                 if(routine.type.equals("FUNCTION")){
                     ResultSet rs = cs.executeQuery();
-                    obj = ResultSetConverter.routineResultToMap(routine, rs);
+                    map = ResultSetConverter.routineResultToMap(routine, rs);
                 }
                 else{
                     cs.execute();
-                    obj = ResultSetConverter.routineResultToMap(routine, cs);
+                    map = ResultSetConverter.routineResultToMap(routine, cs);
                 }
                 conn.createStatement().execute("REVERT");
                 conn.commit();
-                return Either.right(obj);
+                return Either.right(map);
             }
         } catch (SQLException e) {
-            Map<String, Object> obj = new HashMap<String, Object>();
-            obj.put("message", e.getMessage());
-            obj.put("code", e.getErrorCode());
-            return Either.left(obj);
+            Map<String, Object> map = new HashMap<String, Object>();
+            map.put("message", e.getMessage());
+            map.put("code", e.getErrorCode());
+            return Either.left(map);
         }
     }
 
