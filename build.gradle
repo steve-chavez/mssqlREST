@@ -38,3 +38,6 @@ jar {
     exclude 'META-INF/*.RSA', 'META-INF/*.SF','META-INF/*.DSA' 
 }
 
+run {
+    args "config-cloud.yml"
+}

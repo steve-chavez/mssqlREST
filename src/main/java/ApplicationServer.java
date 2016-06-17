@@ -75,9 +75,16 @@ public class ApplicationServer {
     public static void main(String[] args) throws FileNotFoundException{
 
 		Yaml yaml = new Yaml();
-	
-		Map<String, Object> vals = (Map<String, Object>) yaml
-				.load(new FileInputStream(new File("config-cloud.yml")));
+
+    	Map<String, Object> vals = null;
+        try{
+            vals = (Map<String, Object>) yaml
+                    .load(new FileInputStream(new File(args[0])));
+        }catch(Exception e){
+            System.out.println("You must supply a configuration"+
+                "file as argument");
+            System.exit(0);
+        }
 
         HikariDataSource ds = new HikariDataSource();
         ds.setJdbcUrl(vals.get("url").toString());
