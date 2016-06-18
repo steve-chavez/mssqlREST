@@ -50,4 +50,5 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
 - [JDBC](http://stackoverflow.com/questions/17657057/workaround-for-null-primitives-in-jdbc-preparedstatement)
 - [Function default](http://stackoverflow.com/questions/8358315/t-sql-function-with-default-parameters)
 - [Stored procedure default obtain](http://stackoverflow.com/questions/14652361/determine-whether-sp-parameter-has-a-default-value-in-t-sql)
+- [Jasper compile once](http://stackoverflow.com/questions/14738332/how-to-compile-jrxml-only-once)
 

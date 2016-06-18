@@ -72,16 +72,14 @@ public class ApplicationServer {
             return Optional.empty();
     }
 
-    public static void main(String[] args) throws FileNotFoundException{
-
-		Yaml yaml = new Yaml();
+    public static void main(String[] args){
 
     	Map<String, Object> vals = null;
         try{
-            vals = (Map<String, Object>) yaml
+            vals = (Map<String, Object>) new Yaml()
                     .load(new FileInputStream(new File(args[0])));
         }catch(Exception e){
-            System.out.println("You must supply a configuration"+
+            System.out.println("You must supply a configuration "+
                 "file as argument");
             System.exit(0);
         }
@@ -90,6 +88,8 @@ public class ApplicationServer {
         ds.setJdbcUrl(vals.get("url").toString());
         ds.setUsername(vals.get("user").toString());
         ds.setPassword(vals.get("password").toString());
+
+        Spark.port((Integer)vals.get("port")); 
 
         Optional<Object> optionalJwtRoutines = Optional.ofNullable(vals.get("jwtRoutines"));
         List<String> jwtRoutines;
@@ -101,8 +101,6 @@ public class ApplicationServer {
         String secret = vals.get("secret").toString(); 
 
         QueryExecuter queryExecuter = new QueryExecuter(ds, vals.get("defaultRole").toString());
-
-        Spark.port((Integer)vals.get("port")); 
 
         // Headers:
         // Plurality: singular, plural
