@@ -52,10 +52,12 @@ public class QueryExecuter{
     public Either<Object, Object> selectAllPrivilegedTables(Optional<String> role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
-            if(role.isPresent())
-                conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
-            else
-                conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
+            String actualRole = this.defaultRole;
+            if(role.isPresent()){
+                actualRole = role.get();
+                conn.createStatement().execute(String.format("EXEC AS USER='%s'", actualRole));
+            } else
+                conn.createStatement().execute(String.format("EXEC AS USER='%s'", actualRole));
             String query = "SELECT table_schema AS [schema], table_name AS name, " +
                 "CONVERT(BIT, MAX(CASE WHEN privilege_type = 'SELECT' THEN 1 ELSE 0 END )) AS selectable,"+
                 " CONVERT(BIT, MAX(CASE WHEN privilege_type = 'INSERT' THEN 1 ELSE 0 END )) AS insertable,"+
@@ -63,7 +65,7 @@ public class QueryExecuter{
                 " CONVERT(BIT, MAX(CASE WHEN privilege_type = 'DELETE' THEN 1 ELSE 0 END )) AS deletable"+
                 " FROM information_schema.table_privileges WHERE grantee = ? GROUP BY table_schema,table_name";
             PreparedStatement statement = conn.prepareStatement(query);
-            statement.setString(1, this.defaultRole);
+            statement.setString(1, actualRole);
             System.out.println(query);
             ResultSet rs = statement.executeQuery();
             Object json = ResultSetConverter.convert(rs, false, ResultSetConverter.Format.JSON);

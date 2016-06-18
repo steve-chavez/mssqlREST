@@ -1,0 +1,16 @@
+
+url: jdbc:sqlserver://rrhh.database.windows.net;database=RRHH;
+
+user: stevebash
+
+password: 1qaz"WSX
+    
+defaultRole: anonimo
+
+port: 9090
+
+secret: munilavictoria
+
+jwtRoutines :
+    - login
+

@@ -5,8 +5,10 @@ user: vadrianzenl
 
 password: victor1427
     
-defaultRole: planillero
+defaultRole: anonimo
 
 port: 9090
 
+jwtRoutines :
+    - login
 

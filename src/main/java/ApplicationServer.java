@@ -115,6 +115,12 @@ public class ApplicationServer {
         });
 
         //---------Pre flight---------
+        Spark.options("/", (request, response) -> {
+            System.out.println(request.requestMethod() + " : " + request.url());
+            response.status(200);
+            return "";
+        });
+
         Spark.options("/:table", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
             response.status(200);
