@@ -51,4 +51,12 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
 - [Function default](http://stackoverflow.com/questions/8358315/t-sql-function-with-default-parameters)
 - [Stored procedure default obtain](http://stackoverflow.com/questions/14652361/determine-whether-sp-parameter-has-a-default-value-in-t-sql)
 - [Jasper compile once](http://stackoverflow.com/questions/14738332/how-to-compile-jrxml-only-once)
+- [CDC](https://www.simple-talk.com/sql/learn-sql-server/introduction-to-change-data-capture-(cdc)-in-sql-server-2008/)
+
+## Sql Server Error 15517
+
+- http://www.sqlservercentral.com/blogs/brian_kelley/2013/04/22/troubleshooting-sql-server-error-15517/
+- https://danieladeniji.wordpress.com/2009/10/09/ms-sql-server-service-broker-errors-15517-33009/
+- http://www.biztalkgurus.com/biztalk_server/biztalk_2009/f/32/p/13271/25836.aspx
+- https://social.msdn.microsoft.com/Forums/sqlserver/en-US/0dca9324-e274-4e7a-bb6b-e8709fea809c/error-15517?forum=sqlservicebroker
 
