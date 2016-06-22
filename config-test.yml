@@ -7,6 +7,8 @@ password: victor1427
     
 defaultRole: anonimo
 
+secret: munilavictoria
+
 port: 9090
 
 jwtRoutines :
