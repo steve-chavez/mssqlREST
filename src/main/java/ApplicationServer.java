@@ -21,6 +21,13 @@ import fj.data.Either;
 import org.json.*;
 
 public class ApplicationServer {
+ 
+    private static Map<String, String> normalizeMap(Map<String, String[]> map){
+        return map.entrySet().stream().collect(
+                Collectors.toMap(
+                    Map.Entry::getKey, e -> e.getValue()[0]
+        ));
+    }
 
     private static List<Map<String, String>> convertCSV(List<String[]> rows){
         List<Map<String, String>> mappedValues = 
@@ -150,10 +157,19 @@ public class ApplicationServer {
 
         Spark.get("/:table", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
-            Map<String, String> convertedQueryMap = request.queryMap().toMap().entrySet().stream().collect(
-                Collectors.toMap(
-                    Map.Entry::getKey, e -> e.getValue()[0]
-            ));
+
+            Map<String, String> map = normalizeMap(request.queryMap().toMap());
+            String possibleOrder = map.entrySet().stream()
+                .filter( x -> x.getKey().equalsIgnoreCase("order"))
+                .map( x -> x.getValue())
+                .collect(Collectors.joining());
+            Optional<String> order = possibleOrder.isEmpty()?
+                Optional.empty():Optional.of(possibleOrder);
+
+            Map<String, String> mapWithoutOrder = map.entrySet().stream()
+                .filter( x -> !x.getKey().equalsIgnoreCase("order"))
+                .collect(Collectors.toMap( x -> x.getKey(), x -> x.getValue()));
+
             Optional<String> authorization = Optional.ofNullable(request.headers("Authorization"));
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
             Optional<String> plurality = Optional.ofNullable(request.headers("Plurality"));
@@ -169,7 +185,7 @@ public class ApplicationServer {
 
             if(!resource.isPresent()){
                 Either<Object, Object> result1 = queryExecuter.selectFrom(request.params(":table"), 
-                        convertedQueryMap, singular, format, obtainRole(secret, authorization));
+                        mapWithoutOrder, order, singular, format, obtainRole(secret, authorization));
                 if(result1.isRight()){
                     if(format == ResultSetConverter.Format.CSV)
                         response.type("text/csv");
@@ -248,12 +264,9 @@ public class ApplicationServer {
             Gson gson = new Gson();
 
             Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
-            Map<String, String> convertedQueryMap = request.queryMap().toMap().entrySet().stream().collect(
-                Collectors.toMap(
-                    Map.Entry::getKey, e -> e.getValue()[0]
-            ));
+            Map<String, String> map = normalizeMap(request.queryMap().toMap());
             Either<Object, Object> result = queryExecuter.updateSet(request.params(":table"), 
-                    values, convertedQueryMap, obtainRole(secret, authorization));
+                    values, map, obtainRole(secret, authorization));
             if(result.isRight()){
                 response.type("application/json");
                 response.status(200);
@@ -270,12 +283,9 @@ public class ApplicationServer {
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
             Optional<String> authorization = Optional.ofNullable(request.headers("Authorization"));
 
-            Map<String, String> convertedQueryMap = request.queryMap().toMap().entrySet().stream().collect(
-                Collectors.toMap(
-                    Map.Entry::getKey, e -> e.getValue()[0]
-            ));
+            Map<String, String> map = normalizeMap(request.queryMap().toMap());
             Either<Object, Object> result = queryExecuter.deleteFrom(request.params(":table"), 
-                    convertedQueryMap, obtainRole(secret, authorization));
+                    map, obtainRole(secret, authorization));
             if(result.isRight()){
                 response.type("application/json");
                 response.status(200);

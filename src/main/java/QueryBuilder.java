@@ -6,7 +6,8 @@ public class QueryBuilder{
 
     public static String selectQuery(
             Structure.Table table,
-            String[] params
+            String[] params,
+            Optional<String> order
         ){
         StringBuilder builder = new StringBuilder("SELECT * FROM ");
         builder.append(table.name);
@@ -22,6 +23,9 @@ public class QueryBuilder{
             builder.append(" WHERE ");
             builder.append(questionParams.stream().collect(Collectors.joining(" AND ")));
         }
+
+        if(order.isPresent())
+            builder.append(" ORDER BY " + order.get());
 
         return builder.toString();
     }

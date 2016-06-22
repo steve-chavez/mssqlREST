@@ -15,6 +15,7 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
        even SQL server sp_help doesn't know return type when using RETURN, also in t-sql only INOUT parameters exist)
  - [x] Support for user impersonation.
  - [x] Support for GET with CSV response.
+ - [x] Support for GET with ORDER BY.
  - [x] Support for POST with CSV Content-Type.
  - [x] Support for explicit nulls in request body. 
  - [x] Support for jwt encoding and decoding. 
@@ -52,6 +53,7 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
 - [Stored procedure default obtain](http://stackoverflow.com/questions/14652361/determine-whether-sp-parameter-has-a-default-value-in-t-sql)
 - [Jasper compile once](http://stackoverflow.com/questions/14738332/how-to-compile-jrxml-only-once)
 - [CDC](https://www.simple-talk.com/sql/learn-sql-server/introduction-to-change-data-capture-(cdc)-in-sql-server-2008/)
+- [UTF-8](http://stackoverflow.com/questions/21267234/show-utf-8-text-properly-in-gradle/34717160#34717160)
 
 ## Sql Server Error 15517
 

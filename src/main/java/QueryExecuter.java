@@ -80,7 +80,10 @@ public class QueryExecuter{
         }
     }
 
-    public Either<Object, Object> selectFrom(String tableName, Map<String, String> queryParams, Boolean singular, ResultSetConverter.Format format,
+    public Either<Object, Object> selectFrom(
+            String tableName, Map<String, String> queryParams, 
+            Optional<String> order, Boolean singular, 
+            ResultSetConverter.Format format,
             Optional<String> role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
@@ -97,7 +100,9 @@ public class QueryExecuter{
                 return Either.left(obj);
             }else{
                 Structure.Table table = optionalTable.get();
-                String query = QueryBuilder.selectQuery(table, queryParams.keySet().toArray(new String[queryParams.size()]));
+                String query = QueryBuilder.selectQuery(table, 
+                        queryParams.keySet().toArray(new String[queryParams.size()]), 
+                        order);
                 System.out.println(query);
                 PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, queryParams);
                 ResultSet rs = statement.executeQuery();
