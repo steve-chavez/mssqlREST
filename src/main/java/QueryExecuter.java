@@ -33,15 +33,25 @@ public class QueryExecuter{
                 " CONVERT(BIT, (CASE WHEN IS_NULLABLE = 'YES' THEN 1 ELSE 0 END)) AS nullable,"+
                 " NUMERIC_PRECISION AS precision, NUMERIC_SCALE AS scale"+
                 " FROM information_schema.columns WHERE table_name = ? ";
-            PreparedStatement statement = conn.prepareStatement(query);
-            statement.setString(1, tableName);
             System.out.println(query);
-            ResultSet rs = statement.executeQuery();
-            Object json = ResultSetConverter.convert(rs, singular, ResultSetConverter.Format.JSON);
+            Either<Object, Object> result;
+            try{
+                PreparedStatement statement = conn.prepareStatement(query);
+                statement.setString(1, tableName);
+                ResultSet rs = statement.executeQuery();
+                Object json = ResultSetConverter.convert(rs, singular, ResultSetConverter.Format.JSON);
+                result = Either.right(json);
+            } catch (SQLException e) {
+                JSONObject obj = new JSONObject();
+                obj.put("message", e.getMessage());
+                obj.put("code", e.getErrorCode());
+                result = Either.left(obj);
+            }
             conn.createStatement().execute("REVERT");
             conn.commit();
-            return Either.right(json);
+            return result;
         } catch (SQLException e) {
+            //This exception is only for connection
             JSONObject obj = new JSONObject();
             obj.put("message", e.getMessage());
             obj.put("code", e.getErrorCode());
@@ -64,15 +74,25 @@ public class QueryExecuter{
                 " CONVERT(BIT, MAX(CASE WHEN privilege_type = 'UPDATE' THEN 1 ELSE 0 END )) AS updateable,"+
                 " CONVERT(BIT, MAX(CASE WHEN privilege_type = 'DELETE' THEN 1 ELSE 0 END )) AS deletable"+
                 " FROM information_schema.table_privileges WHERE grantee = ? GROUP BY table_schema,table_name";
-            PreparedStatement statement = conn.prepareStatement(query);
-            statement.setString(1, actualRole);
             System.out.println(query);
-            ResultSet rs = statement.executeQuery();
-            Object json = ResultSetConverter.convert(rs, false, ResultSetConverter.Format.JSON);
+            Either<Object, Object> result;
+            try{
+                PreparedStatement statement = conn.prepareStatement(query);
+                statement.setString(1, actualRole);
+                ResultSet rs = statement.executeQuery();
+                Object json = ResultSetConverter.convert(rs, false, ResultSetConverter.Format.JSON);
+                result = Either.right(json);
+            } catch (SQLException e) {
+                JSONObject obj = new JSONObject();
+                obj.put("message", e.getMessage());
+                obj.put("code", e.getErrorCode());
+                result = Either.left(obj);
+            }
             conn.createStatement().execute("REVERT");
             conn.commit();
-            return Either.right(json);
+            return result;
         } catch (SQLException e) {
+            //This exception is only for connection
             JSONObject obj = new JSONObject();
             obj.put("message", e.getMessage());
             obj.put("code", e.getErrorCode());
@@ -104,14 +124,24 @@ public class QueryExecuter{
                         queryParams.keySet().toArray(new String[queryParams.size()]), 
                         order);
                 System.out.println(query);
-                PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, queryParams);
-                ResultSet rs = statement.executeQuery();
-                Object json = ResultSetConverter.convert(rs, singular, format);
+                Either<Object, Object> result;
+                try{
+                    PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, queryParams);
+                    ResultSet rs = statement.executeQuery();
+                    Object json = ResultSetConverter.convert(rs, singular, format);
+                    result = Either.right(json);
+                }catch(SQLException e){
+                    JSONObject obj = new JSONObject();
+                    obj.put("message", e.getMessage());
+                    obj.put("code", e.getErrorCode());
+                    result = Either.left(obj);
+                }
                 conn.createStatement().execute("REVERT");
                 conn.commit();
-                return Either.right(json);
+                return result;
             }
         } catch (SQLException e) {
+            //This exception is only for connection
             JSONObject obj = new JSONObject();
             obj.put("message", e.getMessage());
             obj.put("code", e.getErrorCode());
@@ -119,6 +149,7 @@ public class QueryExecuter{
         }
     }
 
+    //Single
     public Either<Object, Object> insertInto(String tableName, Map<String, String> values, Optional<String> role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
@@ -136,18 +167,27 @@ public class QueryExecuter{
             }else{
                 Structure.Table table = optionalTable.get();
                 String query = QueryBuilder.insertQuery(table, new ArrayList<String>(values.keySet()));
-                System.out.println(query);
-                Integer id = 0;
-                PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, values);
-                statement.executeUpdate();
-                ResultSet rs = statement.getGeneratedKeys();
-                if(rs.next())
-                    id = rs.getInt(1);
+                Either<Object, Object> result;
+                try{
+                    PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, values);
+                    statement.executeUpdate();
+                    ResultSet rs = statement.getGeneratedKeys();
+                    Integer id = 0;
+                    if(rs.next())
+                        id = rs.getInt(1);
+                    result = Either.right(id);
+                }catch(SQLException e){
+                    JSONObject obj = new JSONObject();
+                    obj.put("message", e.getMessage());
+                    obj.put("code", e.getErrorCode());
+                    result = Either.left(obj);
+                }
                 conn.createStatement().execute("REVERT");
                 conn.commit();
-                return Either.right(id);
+                return result;
             }
         } catch (SQLException e) {
+            //This exception is only for connection
             JSONObject obj = new JSONObject();
             obj.put("message", e.getMessage());
             obj.put("code", e.getErrorCode());
@@ -155,6 +195,7 @@ public class QueryExecuter{
         }
     }
 
+    //Batch
     public Either<Object, Object> insertInto(String tableName, List<Map<String, String>> values, Optional<String> role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
@@ -173,14 +214,24 @@ public class QueryExecuter{
                 Structure.Table table = optionalTable.get();
                 String query = QueryBuilder.insertQuery(table, new ArrayList<String>(values.get(0).keySet()));
                 System.out.println(query);
-                Integer id = 0;
-                PreparedStatement statement = StatementBuilder.buildBatchPreparedStatement(conn, query, table, values);
-                int[] result = statement.executeBatch();
+                int[] inserts;
+                Either<Object, Object> result;
+                try{
+                    PreparedStatement statement = StatementBuilder.buildBatchPreparedStatement(conn, query, table, values);
+                    inserts = statement.executeBatch();
+                    result = Either.right(inserts);
+                } catch (SQLException e) {
+                    JSONObject obj = new JSONObject();
+                    obj.put("message", e.getMessage());
+                    obj.put("code", e.getErrorCode());
+                    result =  Either.left(obj);
+                }
                 conn.createStatement().execute("REVERT");
                 conn.commit();
-                return Either.right(result);
+                return result;
             }
         } catch (SQLException e) {
+            //This exception is only for connection
             JSONObject obj = new JSONObject();
             obj.put("message", e.getMessage());
             obj.put("code", e.getErrorCode());
@@ -210,13 +261,23 @@ public class QueryExecuter{
                         queryParams.keySet().toArray(new String[queryParams.size()])
                 );
                 System.out.println(query);
-                PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, values, queryParams);
-                statement.executeUpdate();
+                Either<Object, Object> result;
+                try{
+                    PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, values, queryParams);
+                    statement.executeUpdate();
+                    result = Either.right("");
+                } catch (SQLException e) {
+                    JSONObject obj = new JSONObject();
+                    obj.put("message", e.getMessage());
+                    obj.put("code", e.getErrorCode());
+                    result =  Either.left(obj);
+                }
                 conn.createStatement().execute("REVERT");
                 conn.commit();
-                return Either.right("");
+                return result;
             }
         } catch (SQLException e) {
+            //This exception is only for connection
             JSONObject obj = new JSONObject();
             obj.put("message", e.getMessage());
             obj.put("code", e.getErrorCode());
@@ -242,13 +303,23 @@ public class QueryExecuter{
                 Structure.Table table = optionalTable.get();
                 String query = QueryBuilder.deleteQuery(table, queryParams.keySet().toArray(new String[queryParams.size()]));
                 System.out.println(query);
-                PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, queryParams);
-                statement.executeUpdate();
+                Either<Object, Object> result;
+                try{
+                    PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, queryParams);
+                    statement.executeUpdate();
+                    result = Either.right("");
+                } catch (SQLException e) {
+                    JSONObject obj = new JSONObject();
+                    obj.put("message", e.getMessage());
+                    obj.put("code", e.getErrorCode());
+                    result =  Either.left(obj);
+                }
                 conn.createStatement().execute("REVERT");
                 conn.commit();
-                return Either.right("");
+                return result;
             }
         } catch (SQLException e) {
+            //This exception is only for connection
             JSONObject obj = new JSONObject();
             obj.put("message", e.getMessage());
             obj.put("code", e.getErrorCode());
@@ -257,10 +328,10 @@ public class QueryExecuter{
     }
 
     public Either<Map<String, Object>, Map<String, Object>> callRoutine(
-        String funcName, Map<String, String> values, 
-        Optional<String> role){
-
-        try(Connection conn = this.ds.getConnection()){
+            String funcName, Map<String, String> values, 
+            Optional<String> role
+        ){
+            try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             if(role.isPresent())
                 conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
@@ -277,22 +348,32 @@ public class QueryExecuter{
                 Structure.Routine routine = optionalRoutine.get();
                 String query = QueryBuilder.functionQuery(routine); 
                 System.out.println(query);
-                Map<String, Object> map = new HashMap<String, Object>();
-                CallableStatement cs = StatementBuilder
-                    .buildCallableStatement(conn, query, routine, values);
-                if(routine.type.equals("FUNCTION")){
-                    ResultSet rs = cs.executeQuery();
-                    map = ResultSetConverter.routineResultToMap(routine, rs);
-                }
-                else{
-                    cs.execute();
-                    map = ResultSetConverter.routineResultToMap(routine, cs);
+                Either<Map<String, Object>, Map<String, Object>> result;
+                try{
+                    Map<String, Object> map = new HashMap<String, Object>();
+                    CallableStatement cs = StatementBuilder
+                        .buildCallableStatement(conn, query, routine, values);
+                    if(routine.type.equals("FUNCTION")){
+                        ResultSet rs = cs.executeQuery();
+                        map = ResultSetConverter.routineResultToMap(routine, rs);
+                    }
+                    else{
+                        cs.execute();
+                        map = ResultSetConverter.routineResultToMap(routine, cs);
+                    }
+                    result = Either.right(map);
+                } catch (SQLException e) {
+                    Map<String, Object> map = new HashMap<String, Object>();
+                    map.put("message", e.getMessage());
+                    map.put("code", e.getErrorCode());
+                    result =  Either.left(map);
                 }
                 conn.createStatement().execute("REVERT");
                 conn.commit();
-                return Either.right(map);
+                return result;
             }
         } catch (SQLException e) {
+            //This exception is only for connection
             Map<String, Object> map = new HashMap<String, Object>();
             map.put("message", e.getMessage());
             map.put("code", e.getErrorCode());

@@ -53,7 +53,7 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
 - [Stored procedure default obtain](http://stackoverflow.com/questions/14652361/determine-whether-sp-parameter-has-a-default-value-in-t-sql)
 - [Jasper compile once](http://stackoverflow.com/questions/14738332/how-to-compile-jrxml-only-once)
 - [CDC](https://www.simple-talk.com/sql/learn-sql-server/introduction-to-change-data-capture-(cdc)-in-sql-server-2008/)
-- [UTF-8](http://stackoverflow.com/questions/21267234/show-utf-8-text-properly-in-gradle/34717160#34717160)
+- [UTF-8 Gradle](http://stackoverflow.com/questions/21267234/show-utf-8-text-properly-in-gradle/34717160#34717160)
 
 ## Sql Server Error 15517
 
