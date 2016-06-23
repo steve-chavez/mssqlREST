@@ -39,5 +39,5 @@ jar {
 }
 
 run {
-    args "config-cloud.yml"
+    args "config-test.yml"
 }
