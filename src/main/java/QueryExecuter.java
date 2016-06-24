@@ -102,7 +102,9 @@ public class QueryExecuter{
 
     public Either<Object, Object> selectFrom(
             String tableName, Map<String, String> queryParams, 
-            Optional<String> order, Boolean singular, 
+            Optional<String> selectColumns,
+            Optional<String> order,
+            Boolean singular, 
             ResultSetConverter.Format format,
             Optional<String> role){
         try(Connection conn = this.ds.getConnection()){
@@ -121,7 +123,9 @@ public class QueryExecuter{
             }else{
                 Structure.Table table = optionalTable.get();
                 String query = QueryBuilder.selectQuery(table, 
-                        queryParams.keySet().toArray(new String[queryParams.size()]), 
+                        queryParams.keySet().toArray(
+                            new String[queryParams.size()]), 
+                        selectColumns,
                         order);
                 System.out.println(query);
                 Either<Object, Object> result;

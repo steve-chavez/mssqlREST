@@ -159,15 +159,27 @@ public class ApplicationServer {
             System.out.println(request.requestMethod() + " : " + request.url());
 
             Map<String, String> map = normalizeMap(request.queryMap().toMap());
-            String possibleOrder = map.entrySet().stream()
+
+            //order query param
+            String optOrder = map.entrySet().stream()
                 .filter( x -> x.getKey().equalsIgnoreCase("order"))
                 .map( x -> x.getValue())
                 .collect(Collectors.joining());
-            Optional<String> order = possibleOrder.isEmpty()?
-                Optional.empty():Optional.of(possibleOrder);
+            Optional<String> order = optOrder.isEmpty()?
+                Optional.empty():Optional.of(optOrder);
 
-            Map<String, String> mapWithoutOrder = map.entrySet().stream()
-                .filter( x -> !x.getKey().equalsIgnoreCase("order"))
+            //select query param
+            String optSelect = map.entrySet().stream()
+                .filter( x -> x.getKey().equalsIgnoreCase("select"))
+                .map( x -> x.getValue())
+                .collect(Collectors.joining());
+            Optional<String> selectColumns = optSelect.isEmpty()?
+                Optional.empty():Optional.of(optSelect);
+
+            //Other query params
+            Map<String, String> mapWithout = map.entrySet().stream()
+                .filter( x -> !x.getKey().equalsIgnoreCase("order")&&
+                              !x.getKey().equalsIgnoreCase("select"))
                 .collect(Collectors.toMap( x -> x.getKey(), x -> x.getValue()));
 
             Optional<String> authorization = Optional.ofNullable(request.headers("Authorization"));
@@ -185,7 +197,7 @@ public class ApplicationServer {
 
             if(!resource.isPresent()){
                 Either<Object, Object> result1 = queryExecuter.selectFrom(request.params(":table"), 
-                        mapWithoutOrder, order, singular, format, obtainRole(secret, authorization));
+                        mapWithout, selectColumns, order, singular, format, obtainRole(secret, authorization));
                 if(result1.isRight()){
                     if(format == ResultSetConverter.Format.CSV)
                         response.type("text/csv");

@@ -7,10 +7,18 @@ public class QueryBuilder{
     public static String selectQuery(
             Structure.Table table,
             String[] params,
+            Optional<String> selectColumns,
             Optional<String> order
         ){
-        StringBuilder builder = new StringBuilder("SELECT * FROM ");
-        builder.append(table.name);
+        StringBuilder builder = new StringBuilder("SELECT ");
+
+        if(selectColumns.isPresent()){
+            builder.append(selectColumns.get());
+        }
+        else
+            builder.append("*");
+
+        builder.append(" FROM " + table.name);
 
         List<String> questionParams = new ArrayList<String>();
 
