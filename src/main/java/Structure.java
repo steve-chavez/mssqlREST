@@ -3,6 +3,10 @@ import java.util.*;
 
 public class Structure{
 
+    public enum Format{
+        JSON, CSV, XLSX;
+    }
+
     public static class Table{
 
         public String name;

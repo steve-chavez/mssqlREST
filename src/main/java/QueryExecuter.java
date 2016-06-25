@@ -39,7 +39,7 @@ public class QueryExecuter{
                 PreparedStatement statement = conn.prepareStatement(query);
                 statement.setString(1, tableName);
                 ResultSet rs = statement.executeQuery();
-                Object json = ResultSetConverter.convert(rs, singular, ResultSetConverter.Format.JSON);
+                Object json = ResultSetConverter.convert(rs, singular, Structure.Format.JSON);
                 result = Either.right(json);
             } catch (SQLException e) {
                 JSONObject obj = new JSONObject();
@@ -80,7 +80,7 @@ public class QueryExecuter{
                 PreparedStatement statement = conn.prepareStatement(query);
                 statement.setString(1, actualRole);
                 ResultSet rs = statement.executeQuery();
-                Object json = ResultSetConverter.convert(rs, false, ResultSetConverter.Format.JSON);
+                Object json = ResultSetConverter.convert(rs, false, Structure.Format.JSON);
                 result = Either.right(json);
             } catch (SQLException e) {
                 JSONObject obj = new JSONObject();
@@ -105,7 +105,7 @@ public class QueryExecuter{
             Optional<String> selectColumns,
             Optional<String> order,
             Boolean singular, 
-            ResultSetConverter.Format format,
+            Structure.Format format,
             Optional<String> role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);

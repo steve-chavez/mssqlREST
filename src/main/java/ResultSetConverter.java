@@ -7,6 +7,11 @@ import com.univocity.parsers.common.processor.*;
 import com.univocity.parsers.conversions.*;
 import com.univocity.parsers.csv.*;
 
+import com.ebay.xcelite.sheet.*;
+import com.ebay.xcelite.reader.*;
+import com.ebay.xcelite.writer.*;
+import com.ebay.xcelite.*;
+
 import java.sql.SQLException;
 import java.sql.CallableStatement;
 import java.sql.ResultSet;
@@ -17,17 +22,13 @@ import java.io.*;
 
 public class ResultSetConverter {
 
-    public enum Format{
-        JSON, CSV;
-    }
-
-    public static Object convert( ResultSet rs, Boolean singular, Format format)
+    public static Object convert( ResultSet rs, Boolean singular, Structure.Format format)
         throws SQLException, JSONException {
 
         ResultSetMetaData rsmd = rs.getMetaData();
         int numColumns = rsmd.getColumnCount();
 
-        if(format==Format.JSON){
+        if(format==Structure.Format.JSON){
             if(singular){
                 JSONObject obj = new JSONObject();
 
@@ -50,7 +51,7 @@ public class ResultSetConverter {
                 }
                 return jsonArr;
             }
-        }else{
+        }else if(format==Structure.Format.CSV){
 
             ByteArrayOutputStream csvResult = new ByteArrayOutputStream();
             Writer outputWriter = new OutputStreamWriter(csvResult);
@@ -66,7 +67,6 @@ public class ResultSetConverter {
 
             while(rs.next()){
                 List<Object> row = new ArrayList<Object>();
-                JSONObject obj = new JSONObject();
                 for (int i=1; i<numColumns+1; i++) {
                     String columnName = rsmd.getColumnName(i);
                     row.add(getColumnValue(rs, columnName, rsmd.getColumnType(i)));
@@ -76,6 +76,27 @@ public class ResultSetConverter {
 
             writer.close();
             return csvResult.toString();
+        }else{
+            Xcelite xcelite = new Xcelite();    
+            XceliteSheet sheet = xcelite.createSheet("data_sheet");
+            SheetWriter<Collection<Object>> simpleWriter = sheet.getSimpleWriter();
+            List<Collection<Object>> data = new ArrayList<Collection<Object>>();
+
+            List<Object> headers = new ArrayList<Object>();
+            for (int i=1; i<numColumns+1; i++){
+                headers.add(rsmd.getColumnName(i));
+            }
+            data.add(headers);
+            while(rs.next()){
+                List<Object> row = new ArrayList<Object>();
+                for (int i=1; i<numColumns+1; i++) {
+                    String columnName = rsmd.getColumnName(i);
+                    row.add(getColumnValue(rs, columnName, rsmd.getColumnType(i)));
+                }
+                data.add(row);
+            }
+            simpleWriter.write(data);   
+            return xcelite.getBytes();
         }
     }
 

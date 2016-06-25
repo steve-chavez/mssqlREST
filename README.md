@@ -15,6 +15,7 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
        even SQL server sp_help doesn't know return type when using RETURN, also in t-sql only INOUT parameters exist)
  - [x] Support for user impersonation.
  - [x] Support for GET with CSV response.
+ - [x] Support for GET with XLS response.
  - [x] Support for GET with ORDER BY.
  - [x] Support for GET with SELECT projection.
  - [x] Support for POST with CSV Content-Type.

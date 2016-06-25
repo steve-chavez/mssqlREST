@@ -20,6 +20,8 @@ import fj.data.Either;
 
 import org.json.*;
 
+import javax.servlet.http.*;
+
 public class ApplicationServer {
  
     private static Map<String, String> normalizeMap(Map<String, String[]> map){
@@ -187,11 +189,15 @@ public class ApplicationServer {
             Optional<String> plurality = Optional.ofNullable(request.headers("Plurality"));
             Optional<String> accept = Optional.ofNullable(request.headers("Accept"));
 
-            ResultSetConverter.Format format;
-            if(accept.isPresent())
-                format = accept.get().equals("text/csv")?ResultSetConverter.Format.CSV:ResultSetConverter.Format.JSON;
-            else
-                format = ResultSetConverter.Format.JSON;
+            Structure.Format format = Structure.Format.JSON;
+            if(accept.isPresent()){
+                if(accept.get().equals("text/csv"))
+                    format = Structure.Format.CSV;
+                else if(accept.get().equals("application/vnd.ms-excel"))
+                    format = Structure.Format.XLSX;
+                else if(accept.get().equals("application/json"))
+                    format = Structure.Format.JSON;
+            }
 
             Boolean singular = plurality.isPresent() && plurality.get().equals("singular");
 
@@ -199,10 +205,19 @@ public class ApplicationServer {
                 Either<Object, Object> result1 = queryExecuter.selectFrom(request.params(":table"), 
                         mapWithout, selectColumns, order, singular, format, obtainRole(secret, authorization));
                 if(result1.isRight()){
-                    if(format == ResultSetConverter.Format.CSV)
-                        response.type("text/csv");
-                    else
+                    if(format == Structure.Format.JSON)
                         response.type("application/json");
+                    else if(format == Structure.Format.CSV)
+                        response.type("text/csv");
+                    else{
+                        response.type("application/vnd.ms-excel");
+                        response.status(200);
+                        HttpServletResponse raw = response.raw();
+                        raw.getOutputStream().write((byte[])result1.right().value());
+                        raw.getOutputStream().flush();
+                        raw.getOutputStream().close();
+                        return raw;
+                    }
                     response.status(200);
                     return result1.right().value().toString();
                 }else{
@@ -232,13 +247,13 @@ public class ApplicationServer {
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
             Optional<String> authorization = Optional.ofNullable(request.headers("Authorization"));
 
-            ResultSetConverter.Format format;
+            Structure.Format format;
             if(contentType.isPresent())
-                format = contentType.get().equals("text/csv")?ResultSetConverter.Format.CSV:ResultSetConverter.Format.JSON;
+                format = contentType.get().equals("text/csv")?Structure.Format.CSV:Structure.Format.JSON;
             else
-                format = ResultSetConverter.Format.JSON;
+                format = Structure.Format.JSON;
 
-            if(format==ResultSetConverter.Format.JSON){
+            if(format==Structure.Format.JSON){
                 Gson gson = new Gson();
                 Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
                 Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"), 
