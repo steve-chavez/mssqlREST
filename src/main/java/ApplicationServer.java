@@ -87,6 +87,18 @@ public class ApplicationServer {
         else return Optional.empty();
     }
 
+    private static Optional<Map<String, String>> getTableAndDot(String table){
+        String[] parts = table.split("\\.");
+        Map<String, String> map = new HashMap();
+        if(parts.length <= 1)
+            return Optional.empty();
+        else{
+            map.put("table", parts[0]);
+            map.put("dot", parts[1]);
+            return Optional.of(map);
+        }
+    }
+
     public static void main(String[] args){
 
     	Map<String, Object> vals = null;
@@ -197,22 +209,27 @@ public class ApplicationServer {
 
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
             Optional<String> plurality = Optional.ofNullable(request.headers("Plurality"));
-            Optional<String> accept = Optional.ofNullable(request.headers("Accept"));
+
+            Optional<Map<String,String>> tableDot = getTableAndDot(request.params(":table"));
+            String table, dot;
 
             Structure.Format format = Structure.Format.JSON;
-            if(accept.isPresent()){
-                if(accept.get().equals("text/csv"))
+
+            if(tableDot.isPresent()){
+                table = tableDot.get().get("table");
+                dot = tableDot.get().get("dot");
+                if(dot.equals("csv"))
                     format = Structure.Format.CSV;
-                else if(accept.get().equals("application/vnd.ms-excel"))
+                else if(dot.equals("xls"))
                     format = Structure.Format.XLSX;
-                else if(accept.get().equals("application/json"))
+                else if(dot.equals("json"))
                     format = Structure.Format.JSON;
-            }
+            }else table = request.params(":table");
 
             Boolean singular = plurality.isPresent() && plurality.get().equals("singular");
 
             if(!resource.isPresent()){
-                Either<Object, Object> result1 = queryExecuter.selectFrom(request.params(":table"), 
+                Either<Object, Object> result1 = queryExecuter.selectFrom(table, 
                         mapWithout, selectColumns, order, singular, format, 
                         getRoleFromCookieOrHeader(secret, request));
                 if(result1.isRight()){
@@ -237,7 +254,7 @@ public class ApplicationServer {
                     return result1.left().value().toString();
                 }
             }else{
-                Either<Object, Object> result2 = queryExecuter.selectTableMetaData(request.params(":table"), 
+                Either<Object, Object> result2 = queryExecuter.selectTableMetaData(table, 
                         singular, getRoleFromCookieOrHeader(secret, request));
                 if(result2.isRight()){
                     response.type("application/json");
