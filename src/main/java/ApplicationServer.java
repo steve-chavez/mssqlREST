@@ -239,7 +239,7 @@ public class ApplicationServer {
                         response.type("text/csv");
                     else{
                         response.header("Content-Disposition", "attachment");
-                        response.type("application/vnd.ms-excel");
+                        response.type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
                         response.status(200);
                         HttpServletResponse raw = response.raw();
                         raw.getOutputStream().write((byte[])result1.right().value());
