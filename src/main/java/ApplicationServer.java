@@ -238,6 +238,7 @@ public class ApplicationServer {
                     else if(format == Structure.Format.CSV)
                         response.type("text/csv");
                     else{
+                        response.header("Content-Disposition", "attachment");
                         response.type("application/vnd.ms-excel");
                         response.status(200);
                         HttpServletResponse raw = response.raw();
