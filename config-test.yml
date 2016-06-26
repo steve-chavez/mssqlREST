@@ -14,3 +14,5 @@ port: 9090
 jwtRoutines :
     - login
 
+origin: http://localhost:8080
+

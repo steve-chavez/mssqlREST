@@ -14,3 +14,5 @@ port: 9090
 jwtRoutines :
     - login
 
+origin: http://172.168.200.4
+

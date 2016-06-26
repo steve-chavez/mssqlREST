@@ -24,6 +24,8 @@ import javax.servlet.http.*;
 
 public class ApplicationServer {
  
+    static final String COOKIE_NAME = "x-rest-jwt";
+
     private static Map<String, String> normalizeMap(Map<String, String[]> map){
         return map.entrySet().stream().collect(
                 Collectors.toMap(
@@ -63,22 +65,26 @@ public class ApplicationServer {
         }
     }
 
-    private static Optional<String> obtainRole(String secret, Optional<String> authorization){
-        if(authorization.isPresent()){
-            Optional<String> bearer = obtainBearer(authorization.get());
-            if(bearer.isPresent()){
-                try{
-                    Claims claims = Jwts.parser().setSigningKey(secret).parseClaimsJws(bearer.get()).getBody();
-                    return Optional.of(claims.get("role").toString());
-                }catch(Exception e){
-                    return Optional.empty();
-                }
-            }
-            else
-                return Optional.empty();
-        }
-        else
+    private static Optional<String> decodeGetRole(String secret, String jwt){
+        try{
+            Claims claims = Jwts.parser().setSigningKey(secret).parseClaimsJws(jwt).getBody();
+            return Optional.of(claims.get("role").toString());
+        }catch(Exception e){
             return Optional.empty();
+        }
+    }
+
+    private static Optional<String> getRoleFromCookieOrHeader(String secret, Request request){
+        Optional<String> authorization = Optional.ofNullable(request.headers("Authorization"));
+        Optional<String> cookie = Optional.ofNullable(request.cookie(COOKIE_NAME));
+        if(cookie.isPresent()){
+            return decodeGetRole(secret, cookie.get());
+        }
+        else if(authorization.isPresent()){
+            Optional<String> bearer = obtainBearer(authorization.get());
+            return decodeGetRole(secret, bearer.get());
+        }
+        else return Optional.empty();
     }
 
     public static void main(String[] args){
@@ -88,8 +94,7 @@ public class ApplicationServer {
             vals = (Map<String, Object>) new Yaml()
                     .load(new FileInputStream(new File(args[0])));
         }catch(Exception e){
-            System.out.println("You must supply a configuration "+
-                "file as argument");
+            System.out.println("Config file doesn't exit or is an invalid YAML format");
             System.exit(0);
         }
 
@@ -111,13 +116,19 @@ public class ApplicationServer {
 
         QueryExecuter queryExecuter = new QueryExecuter(ds, vals.get("defaultRole").toString());
 
+        Optional<Object> optOrigin = Optional.ofNullable(vals.get("origin"));
+
         // Headers:
         // Plurality: singular, plural
         // Resource : definition, data
         Spark.before(new Filter() {
             @Override
             public void handle(Request request, Response response) {
-                response.header("Access-Control-Allow-Origin", "*");
+                if(optOrigin.isPresent()){
+                    response.header("Access-Control-Allow-Origin", optOrigin.get().toString());
+                    response.header("Access-Control-Allow-Credentials", "true");
+                }else
+                    response.header("Access-Control-Allow-Origin", "*");
                 response.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
                 response.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Plurality, Resource");
             }
@@ -145,8 +156,8 @@ public class ApplicationServer {
         //
         Spark.get("/", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
-            Optional<String> authorization = Optional.ofNullable(request.headers("Authorization"));
-            Either<Object, Object> result = queryExecuter.selectAllPrivilegedTables(obtainRole(secret, authorization));
+            Either<Object, Object> result = queryExecuter.selectAllPrivilegedTables(
+                    getRoleFromCookieOrHeader(secret, request));
             if(result.isRight()){
                 response.type("application/json");
                 response.status(200);
@@ -184,7 +195,6 @@ public class ApplicationServer {
                               !x.getKey().equalsIgnoreCase("select"))
                 .collect(Collectors.toMap( x -> x.getKey(), x -> x.getValue()));
 
-            Optional<String> authorization = Optional.ofNullable(request.headers("Authorization"));
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
             Optional<String> plurality = Optional.ofNullable(request.headers("Plurality"));
             Optional<String> accept = Optional.ofNullable(request.headers("Accept"));
@@ -203,7 +213,8 @@ public class ApplicationServer {
 
             if(!resource.isPresent()){
                 Either<Object, Object> result1 = queryExecuter.selectFrom(request.params(":table"), 
-                        mapWithout, selectColumns, order, singular, format, obtainRole(secret, authorization));
+                        mapWithout, selectColumns, order, singular, format, 
+                        getRoleFromCookieOrHeader(secret, request));
                 if(result1.isRight()){
                     if(format == Structure.Format.JSON)
                         response.type("application/json");
@@ -227,7 +238,7 @@ public class ApplicationServer {
                 }
             }else{
                 Either<Object, Object> result2 = queryExecuter.selectTableMetaData(request.params(":table"), 
-                        singular, obtainRole(secret, authorization));
+                        singular, getRoleFromCookieOrHeader(secret, request));
                 if(result2.isRight()){
                     response.type("application/json");
                     response.status(200);
@@ -245,7 +256,6 @@ public class ApplicationServer {
 
             Optional<String> contentType = Optional.ofNullable(request.headers("Content-Type"));
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
-            Optional<String> authorization = Optional.ofNullable(request.headers("Authorization"));
 
             Structure.Format format;
             if(contentType.isPresent())
@@ -257,7 +267,7 @@ public class ApplicationServer {
                 Gson gson = new Gson();
                 Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
                 Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"), 
-                        values, obtainRole(secret, authorization));
+                        values, getRoleFromCookieOrHeader(secret, request));
                 if(result.isRight()){
                     response.type("application/json");
                     response.status(200);
@@ -271,7 +281,7 @@ public class ApplicationServer {
                 CsvParser parser = new CsvParser(new CsvParserSettings());
                 List<Map<String, String>> mappedValues = convertCSV(parser.parseAll(new StringReader(request.body())));
                 Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"), 
-                        mappedValues, obtainRole(secret, authorization));
+                        mappedValues, getRoleFromCookieOrHeader(secret, request));
                 if(result.isRight()){
                     response.type("application/json");
                     response.status(200);
@@ -287,13 +297,12 @@ public class ApplicationServer {
         Spark.patch("/:table", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
-            Optional<String> authorization = Optional.ofNullable(request.headers("Authorization"));
             Gson gson = new Gson();
 
             Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
             Map<String, String> map = normalizeMap(request.queryMap().toMap());
             Either<Object, Object> result = queryExecuter.updateSet(request.params(":table"), 
-                    values, map, obtainRole(secret, authorization));
+                    values, map, getRoleFromCookieOrHeader(secret, request));
             if(result.isRight()){
                 response.type("application/json");
                 response.status(200);
@@ -308,11 +317,10 @@ public class ApplicationServer {
         Spark.delete("/:table", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
-            Optional<String> authorization = Optional.ofNullable(request.headers("Authorization"));
 
             Map<String, String> map = normalizeMap(request.queryMap().toMap());
             Either<Object, Object> result = queryExecuter.deleteFrom(request.params(":table"), 
-                    map, obtainRole(secret, authorization));
+                    map, getRoleFromCookieOrHeader(secret, request));
             if(result.isRight()){
                 response.type("application/json");
                 response.status(200);
@@ -327,12 +335,11 @@ public class ApplicationServer {
         Spark.post("/rpc/:routine", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
-            Optional<String> authorization = Optional.ofNullable(request.headers("Authorization"));
             Gson gson = new Gson();
 
             Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
             Either<Map<String, Object>, Map<String, Object>> result = queryExecuter.callRoutine(request.params(":routine"), 
-                values, obtainRole(secret, authorization));
+                values, getRoleFromCookieOrHeader(secret, request));
             if(result.isRight()){
                 response.type("application/json");
                 response.status(200);

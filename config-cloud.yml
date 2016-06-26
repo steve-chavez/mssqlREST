@@ -7,10 +7,12 @@ password: 1qaz"WSX
     
 defaultRole: anonimo
 
-port: 9090
-
 secret: munilavictoria
+
+port: 9090
 
 jwtRoutines :
     - login
+
+origin: http://localhost:8080
 
