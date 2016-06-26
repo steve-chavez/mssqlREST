@@ -220,7 +220,7 @@ public class ApplicationServer {
                 dot = tableDot.get().get("dot");
                 if(dot.equals("csv"))
                     format = Structure.Format.CSV;
-                else if(dot.equals("xls"))
+                else if(dot.equals("xlsx"))
                     format = Structure.Format.XLSX;
                 else if(dot.equals("json"))
                     format = Structure.Format.JSON;
