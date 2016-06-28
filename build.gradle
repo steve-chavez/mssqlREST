@@ -5,6 +5,7 @@ plugins{
 
 repositories{
     mavenCentral()
+    maven { url "https://jitpack.io" }
 }
 
 dependencies {
@@ -20,8 +21,8 @@ dependencies {
        "org.functionaljava:functionaljava-quickcheck:4.5",
        "org.functionaljava:functionaljava-java-core:4.5",
        "com.univocity:univocity-parsers:1.0.0",
-       "com.ebay:xcelite:1.0.4",
-       "io.jsonwebtoken:jjwt:0.6.0"
+       "io.jsonwebtoken:jjwt:0.6.0",
+       "com.github.SteveBash:xcelite:master-SNAPSHOT"
    )
 }
 

@@ -19,6 +19,7 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
  - [x] Support for GET with ORDER BY.
  - [x] Support for GET with SELECT projection.
  - [x] Support for POST with CSV Content-Type.
+ - [x] Support for POST with XLSX Content-Type.
  - [x] Support for explicit nulls in request body. 
  - [x] Support for JWT encoding and decoding. 
  - [x] Support for Header authorization. 

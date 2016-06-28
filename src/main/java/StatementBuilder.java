@@ -144,7 +144,8 @@ public class StatementBuilder{
                     case "smallint":
                     case "int":
                     case "tinyint":
-                        statement.setInt(i, Integer.parseInt(entry.getValue()));
+                        //Can't use Integer.parseInt because (any_number).00 gives an error
+                        statement.setInt(i, new Double(entry.getValue()).intValue());
                         break;
                     case "numeric":
                     case "decimal":

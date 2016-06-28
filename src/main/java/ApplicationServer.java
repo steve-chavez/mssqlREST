@@ -7,6 +7,11 @@ import com.univocity.parsers.common.processor.*;
 import com.univocity.parsers.conversions.*;
 import com.univocity.parsers.csv.*;
 
+import com.ebay.xcelite.sheet.*;
+import com.ebay.xcelite.reader.*;
+import com.ebay.xcelite.writer.*;
+import com.ebay.xcelite.*;
+
 import java.util.*;
 import java.util.stream.*;
 import java.io.*;
@@ -22,6 +27,9 @@ import org.json.*;
 
 import javax.servlet.http.*;
 
+import java.io.*;
+import java.nio.file.*;
+
 public class ApplicationServer {
  
     static final String COOKIE_NAME = "x-rest-jwt";
@@ -33,14 +41,16 @@ public class ApplicationServer {
         ));
     }
 
-    private static List<Map<String, String>> convertCSV(List<String[]> rows){
+    private static List<Map<String, String>> csvToMap(Request request){
+        CsvParser parser = new CsvParser(new CsvParserSettings());
+        List<String[]> rows = parser.parseAll(new StringReader(request.body()));
         List<Map<String, String>> mappedValues = 
             new ArrayList<Map<String, String>>();
         String[] headers = rows.get(0);
         int length = headers.length;
         for(int i=1; i < rows.size(); i++){
             String[] values = rows.get(i);
-            Map<String, String> attr = new HashMap<String, String>();
+            Map<String, String> attr = new LinkedHashMap<String, String>();
             for(int j=0; j<length; j++){
                 attr.put(headers[j], values[j]);
             }
@@ -48,6 +58,41 @@ public class ApplicationServer {
         }
         return mappedValues;
     }
+
+    private static List<Map<String, String>> xlsxToMap(Request request){
+        try{
+            List<Map<String, String>> mappedValues = new ArrayList();
+            Xcelite xcelite = new Xcelite(request.raw().getInputStream());
+            XceliteSheet sheet = xcelite.getSheet("data_sheet");
+            SheetReader<Collection<Object>> simpleReader = sheet.getSimpleReader();
+            List<Collection<Object>> data =
+                new ArrayList<Collection<Object>>(simpleReader.read());
+
+            List<String> headers = data.get(0).stream()
+               .map(object -> (object != null ? object.toString() : null))
+               .collect(Collectors.toList());
+
+            Integer headersSize = headers.size();
+            Integer rowsSize = data.size();
+
+            for (int i=1; i<rowsSize; i++){
+                List<Object> values = new ArrayList(data.get(i));
+                Map<String, String> value = new LinkedHashMap<String, String>();
+                for(int j=0; j<headersSize; j++){
+                    String header = headers.get(j);
+                    if(header != null && !header.isEmpty())
+                        value.put(header, 
+                                values.get(j)==null?null:values.get(j).toString());
+                }
+                mappedValues.add(value);
+            }
+            return mappedValues;
+        }catch(IOException ioe){
+            System.out.println(ioe.getMessage());
+            return null;
+        }
+    }
+
 
     private static Optional<String> obtainBearer(String s){
         if(s.isEmpty())
@@ -275,11 +320,15 @@ public class ApplicationServer {
             Optional<String> contentType = Optional.ofNullable(request.headers("Content-Type"));
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
 
-            Structure.Format format;
-            if(contentType.isPresent())
-                format = contentType.get().equals("text/csv")?Structure.Format.CSV:Structure.Format.JSON;
-            else
-                format = Structure.Format.JSON;
+            Structure.Format format = Structure.Format.JSON;
+            if(contentType.isPresent()){
+                if(contentType.get().equals("text/csv"))
+                    format = Structure.Format.CSV;
+                if(contentType.get().equals("application/json"))
+                    format = Structure.Format.JSON;
+                if(contentType.get().equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    format = Structure.Format.XLSX;
+            }
 
             if(format==Structure.Format.JSON){
                 Gson gson = new Gson();
@@ -295,9 +344,21 @@ public class ApplicationServer {
                     response.status(400);
                     return result.left().value().toString();
                 }
+            }else if(format==Structure.Format.CSV){
+                List<Map<String, String>> mappedValues = csvToMap(request);
+                Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"), 
+                        mappedValues, getRoleFromCookieOrHeader(secret, request));
+                if(result.isRight()){
+                    response.type("application/json");
+                    response.status(200);
+                    return result.right().value().toString();
+                }else{
+                    response.type("application/json");
+                    response.status(400);
+                    return result.left().value().toString();
+                }
             }else{
-                CsvParser parser = new CsvParser(new CsvParserSettings());
-                List<Map<String, String>> mappedValues = convertCSV(parser.parseAll(new StringReader(request.body())));
+                List<Map<String, String>> mappedValues = xlsxToMap(request);
                 Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"), 
                         mappedValues, getRoleFromCookieOrHeader(secret, request));
                 if(result.isRight()){
