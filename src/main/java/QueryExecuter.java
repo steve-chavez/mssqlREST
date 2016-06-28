@@ -223,7 +223,7 @@ public class QueryExecuter{
                 try{
                     PreparedStatement statement = StatementBuilder.buildBatchPreparedStatement(conn, query, table, values);
                     inserts = statement.executeBatch();
-                    result = Either.right(inserts);
+                    result = Either.right(inserts.length);
                 } catch (SQLException e) {
                     JSONObject obj = new JSONObject();
                     obj.put("message", e.getMessage());
