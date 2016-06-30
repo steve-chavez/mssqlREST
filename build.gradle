@@ -41,5 +41,6 @@ jar {
 }
 
 run {
+    systemProperty "file.encoding", "utf-8"
     args "config-cloud.yml"
 }
