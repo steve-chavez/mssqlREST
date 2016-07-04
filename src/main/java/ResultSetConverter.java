@@ -1,8 +1,4 @@
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONException;
-
 import com.univocity.parsers.common.processor.*;
 import com.univocity.parsers.conversions.*;
 import com.univocity.parsers.csv.*;
@@ -17,39 +13,41 @@ import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 
+import com.google.gson.*;
+
 import java.util.*;
 import java.io.*;
 
 public class ResultSetConverter {
 
     public static Object convert( ResultSet rs, Boolean singular, Structure.Format format)
-        throws SQLException, JSONException {
+        throws SQLException {
 
         ResultSetMetaData rsmd = rs.getMetaData();
         int numColumns = rsmd.getColumnCount();
 
         if(format==Structure.Format.JSON){
+            Gson gson = new GsonBuilder().serializeNulls().create();
             if(singular){
-                JSONObject obj = new JSONObject();
-
+                Map<String, Object> map = new HashMap();
                 while(rs.next()) {
                     for (int i=1; i<numColumns+1; i++) {
                         String columnName = rsmd.getColumnName(i);
-                        obj.put(columnName, getColumnValue(rs, columnName, rsmd.getColumnType(i)));
+                        map.put(columnName, getColumnValue(rs, columnName, rsmd.getColumnType(i)));
                     }
                 }
-                return obj;
+                return gson.toJson(map);
             }else{
-                JSONArray jsonArr = new JSONArray();
+                List<Map<String, Object>> maps = new ArrayList();
                 while(rs.next()) {
-                    JSONObject obj = new JSONObject();
+                    Map<String, Object> map = new HashMap();
                     for (int i=1; i<numColumns+1; i++) {
                         String columnName = rsmd.getColumnName(i);
-                        obj.put(columnName, getColumnValue(rs, columnName, rsmd.getColumnType(i)));
+                        map.put(columnName, getColumnValue(rs, columnName, rsmd.getColumnType(i)));
                     }
-                    jsonArr.put(obj);
+                    maps.add(map);
                 }
-                return jsonArr;
+                return gson.toJson(maps);
             }
         }else if(format==Structure.Format.CSV){
 
@@ -101,7 +99,7 @@ public class ResultSetConverter {
     }
 
     public static Map<String, Object> routineResultToMap( Structure.Routine routine, ResultSet rs)
-        throws SQLException, JSONException {
+        throws SQLException {
 
         Map<String, Object> map = new HashMap<String, Object>();
         while(rs.next()) 
@@ -115,7 +113,7 @@ public class ResultSetConverter {
     }
 
     public static Map<String, Object> routineResultToMap( Structure.Routine routine, CallableStatement cs)
-        throws SQLException, JSONException {
+        throws SQLException {
 
         Map<String, Object> map = new HashMap<String, Object>();
         for(Map.Entry<String, Structure.Parameter> entry : routine.parameters.entrySet())
@@ -171,7 +169,7 @@ public class ResultSetConverter {
                 break;
         }
         if(rs.wasNull())
-            return JSONObject.NULL;
+            return null;
         else
             return o;
     }
@@ -221,7 +219,7 @@ public class ResultSetConverter {
                 break;
         }
         if(rs.wasNull())
-            return JSONObject.NULL;
+            return null;
         else
             return o;
     }
@@ -270,7 +268,7 @@ public class ResultSetConverter {
                 break;
         }
         if(rs.wasNull())
-            return JSONObject.NULL;
+            return null;
         else
             return o;
     }
@@ -320,7 +318,7 @@ public class ResultSetConverter {
                 break;
         }
         if(cs.wasNull())
-            return JSONObject.NULL;
+            return null;
         else
             return o;
     }

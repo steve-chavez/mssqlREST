@@ -1,7 +1,7 @@
 
 import spark.*;
 import com.google.gson.reflect.TypeToken;
-import com.google.gson.Gson;
+import com.google.gson.*;
 
 import com.univocity.parsers.common.processor.*;
 import com.univocity.parsers.conversions.*;
@@ -22,8 +22,6 @@ import com.zaxxer.hikari.*;
 import io.jsonwebtoken.*;
 
 import fj.data.Either;
-
-import org.json.*;
 
 import javax.servlet.http.*;
 
@@ -414,10 +412,10 @@ public class ApplicationServer {
         Spark.post("/rpc/:routine", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
-            Gson gson = new Gson();
+            Gson gson = new GsonBuilder().serializeNulls().create();
 
             Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
-            Either<Map<String, Object>, Map<String, Object>> result = queryExecuter.callRoutine(request.params(":routine"), 
+            Either<Object, Map<String, Object>> result = queryExecuter.callRoutine(request.params(":routine"), 
                 values, getRoleFromCookieOrHeader(secret, request));
             if(result.isRight()){
                 response.type("application/json");
@@ -427,11 +425,11 @@ public class ApplicationServer {
                         .setClaims(result.right().value())
                         .signWith(SignatureAlgorithm.HS256, secret).compact();
                 else
-                    return new JSONObject(result.right().value()).toString();
+                    return gson.toJson(result.right().value());
             }else{
                 response.type("application/json");
                 response.status(400);
-                return new JSONObject(result.left().value()).toString();
+                return result.left().value().toString();
             }
         });
     }

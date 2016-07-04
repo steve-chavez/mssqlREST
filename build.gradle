@@ -10,7 +10,6 @@ repositories{
 
 dependencies {
    compile (
-       'org.json:json:20160212',
        'com.google.code.gson:gson:1.7.2',
        'org.yaml:snakeyaml:1.17',
        files('./sqljdbc4.jar'),
