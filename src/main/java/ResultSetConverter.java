@@ -159,10 +159,10 @@ public class ResultSetConverter {
                 o = rs.getInt(columnName);
                 break;
             case java.sql.Types.DATE:
-                o = rs.getDate(columnName);
+                o = rs.getString(columnName);
                 break;
             case java.sql.Types.TIMESTAMP:
-                o = rs.getDate(columnName);
+                o = rs.getString(columnName);
                 break;
             default:
                 o = rs.getObject(columnName);
@@ -212,7 +212,7 @@ public class ResultSetConverter {
             case "datetime2":
             case "time":
             case "timestamp":
-                o = rs.getDate(columnName);
+                o = rs.getString(columnName);
                 break;
             default:
                 o = rs.getObject(columnName);
@@ -261,7 +261,7 @@ public class ResultSetConverter {
             case "datetime2":
             case "time":
             case "timestamp":
-                o = rs.getDate(index);
+                o = rs.getString(index);
                 break;
             default:
                 o = rs.getObject(index);
@@ -311,7 +311,7 @@ public class ResultSetConverter {
             case "datetime2":
             case "time":
             case "timestamp":
-                o = cs.getDate(index);
+                o = cs.getString(index);
                 break;
             default:
                 o = cs.getObject(index);
