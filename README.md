@@ -24,7 +24,6 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
  - [x] Support for JWT encoding and decoding. 
  - [x] Support for Header authorization. 
  - [x] Support for Cookie authorization. 
- - [x] Support for file extension for resource. 
 
 ## Improvements
 
@@ -45,6 +44,7 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
 
 ## Notes
 
+- [Office mime types](http://stackoverflow.com/questions/4212861/what-is-a-correct-mime-type-for-docx-pptx-etc)
 - [StringJoiner](http://stackoverflow.com/a/22577565)
 - https://github.com/Azure/azure-content/blob/master/articles/sql-database/sql-database-manage-azure-ssms.md
 - https://msdn.microsoft.com/en-us/library/ms181362.aspx

@@ -130,18 +130,6 @@ public class ApplicationServer {
         else return Optional.empty();
     }
 
-    private static Optional<Map<String, String>> getTableAndDot(String table){
-        String[] parts = table.split("\\.");
-        Map<String, String> map = new HashMap();
-        if(parts.length <= 1)
-            return Optional.empty();
-        else{
-            map.put("table", parts[0]);
-            map.put("dot", parts[1]);
-            return Optional.of(map);
-        }
-    }
-
     public static void main(String[] args){
 
     	Map<String, Object> vals = null;
@@ -252,22 +240,19 @@ public class ApplicationServer {
 
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
             Optional<String> plurality = Optional.ofNullable(request.headers("Plurality"));
+            Optional<String> accept = Optional.ofNullable(request.headers("Accept"));
 
-            Optional<Map<String,String>> tableDot = getTableAndDot(request.params(":table"));
-            String table, dot;
-
+            String table = request.params(":table");
             Structure.Format format = Structure.Format.JSON;
 
-            if(tableDot.isPresent()){
-                table = tableDot.get().get("table");
-                dot = tableDot.get().get("dot");
-                if(dot.equals("csv"))
+            if(accept.isPresent()){
+                 if(accept.get().equals("text/csv"))
                     format = Structure.Format.CSV;
-                else if(dot.equals("xlsx"))
+								 else if(accept.get().equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                     format = Structure.Format.XLSX;
-                else if(dot.equals("json"))
+                 else if(accept.get().equals("application/json"))
                     format = Structure.Format.JSON;
-            }else table = request.params(":table");
+            }
 
             Boolean singular = plurality.isPresent() && plurality.get().equals("singular");
 
