@@ -18,7 +18,7 @@ public class QueryBuilder{
         else
             builder.append("*");
 
-        builder.append(" FROM " + table.name);
+        builder.append(" FROM [" + table.name + "]");
 
         List<String> questionParams = new ArrayList<String>();
 
@@ -39,9 +39,9 @@ public class QueryBuilder{
     }
 
     public static String insertQuery(Structure.Table table, List<String> columns){
-        StringBuilder builder = new StringBuilder("INSERT INTO ");
+        StringBuilder builder = new StringBuilder("INSERT INTO [");
         builder.append(table.name);
-        builder.append("(");
+        builder.append("](");
         builder.append(columns.stream().collect(Collectors.joining(",")));
         builder.append(") VALUES(");
         builder.append(columns.stream().map( s -> "?" ).collect(Collectors.joining(",")));
@@ -55,9 +55,9 @@ public class QueryBuilder{
             String[] vals,
             String[] params
     ){
-        StringBuilder builder = new StringBuilder("UPDATE ");
+        StringBuilder builder = new StringBuilder("UPDATE [");
         builder.append(table.name);
-        builder.append(" SET ");
+        builder.append("] SET ");
 
         List<String> questionValues = new ArrayList<String>();
 
@@ -86,8 +86,9 @@ public class QueryBuilder{
             Structure.Table table, 
             String[] params
     ){
-        StringBuilder builder = new StringBuilder("DELETE FROM ");
+        StringBuilder builder = new StringBuilder("DELETE FROM [");
         builder.append(table.name);
+        builder.append("]");
 
         List<String> questionParams = new ArrayList<String>();
 
