@@ -4,7 +4,7 @@ import java.util.*;
 public class Structure{
 
     public enum Format{
-        JSON, CSV, XLSX;
+        JSON, CSV, XLSX, BINARY;
     }
 
     public static class Table{

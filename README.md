@@ -24,6 +24,7 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
  - [x] Support for JWT encoding and decoding. 
  - [x] Support for Header authorization. 
  - [x] Support for Cookie authorization. 
+ - [x] Support for GET with BINARY Content-Type for a query with one column. 
 
 ## Improvements
 

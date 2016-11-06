@@ -52,8 +52,7 @@ public class QueryExecuter{
                 PreparedStatement statement = conn.prepareStatement(query);
                 statement.setString(1, tableName);
                 ResultSet rs = statement.executeQuery();
-                Object json = ResultSetConverter.convert(rs, singular, Structure.Format.JSON);
-                result = Either.right(json);
+                result = ResultSetConverter.convert(rs, singular, Structure.Format.JSON);
             } catch (SQLException e) {
                 result = Either.left(exceptionToJson(e));
             }
@@ -87,8 +86,7 @@ public class QueryExecuter{
                 PreparedStatement statement = conn.prepareStatement(query);
                 statement.setString(1, actualRole);
                 ResultSet rs = statement.executeQuery();
-                Object json = ResultSetConverter.convert(rs, false, Structure.Format.JSON);
-                result = Either.right(json);
+                result = ResultSetConverter.convert(rs, false, Structure.Format.JSON);
             } catch (SQLException e) {
                 result = Either.left(exceptionToJson(e));
             }
@@ -131,8 +129,7 @@ public class QueryExecuter{
                 try{
                     PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, queryParams);
                     ResultSet rs = statement.executeQuery();
-                    Object json = ResultSetConverter.convert(rs, singular, format);
-                    result = Either.right(json);
+                    result = ResultSetConverter.convert(rs, singular, format);
                 }catch(SQLException e){
                     result = Either.left(exceptionToJson(e));
                 }

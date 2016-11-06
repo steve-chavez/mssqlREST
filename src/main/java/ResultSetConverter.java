@@ -18,9 +18,11 @@ import com.google.gson.*;
 import java.util.*;
 import java.io.*;
 
+import fj.data.Either;
+
 public class ResultSetConverter {
 
-    public static Object convert( ResultSet rs, Boolean singular, Structure.Format format)
+    public static Either<Object, Object> convert( ResultSet rs, Boolean singular, Structure.Format format)
         throws SQLException {
 
         ResultSetMetaData rsmd = rs.getMetaData();
@@ -36,7 +38,7 @@ public class ResultSetConverter {
                         map.put(columnName, getColumnValue(rs, columnName, rsmd.getColumnType(i)));
                     }
                 }
-                return gson.toJson(map);
+                return Either.right(gson.toJson(map));
             }else{
                 List<Map<String, Object>> maps = new ArrayList();
                 while(rs.next()) {
@@ -47,10 +49,9 @@ public class ResultSetConverter {
                     }
                     maps.add(map);
                 }
-                return gson.toJson(maps);
+                return Either.right(gson.toJson(maps));
             }
         }else if(format==Structure.Format.CSV){
-
             ByteArrayOutputStream csvResult = new ByteArrayOutputStream();
             Writer outputWriter = new OutputStreamWriter(csvResult);
             CsvWriter writer = new CsvWriter(outputWriter, new CsvWriterSettings());
@@ -73,8 +74,8 @@ public class ResultSetConverter {
             }
 
             writer.close();
-            return csvResult.toString();
-        }else{
+            return Either.right(csvResult.toString());
+        }else if(format==Structure.Format.XLSX){
             Xcelite xcelite = new Xcelite();    
             XceliteSheet sheet = xcelite.createSheet("data_sheet");
             SheetWriter<Collection<Object>> simpleWriter = sheet.getSimpleWriter();
@@ -94,7 +95,21 @@ public class ResultSetConverter {
                 data.add(row);
             }
             simpleWriter.write(data);   
-            return xcelite.getBytes();
+            return Either.right(xcelite.getBytes());
+        //}else if(format==Structure.Format.BINARY){
+        }else{
+            if(numColumns == 1){
+                StringJoiner joiner = new StringJoiner("\n");
+                while(rs.next()) {
+                  joiner.add(getColumnValue(rs, rsmd.getColumnName(1), rsmd.getColumnType(1)).toString());
+                }
+                return Either.right(joiner);
+            } else {
+                Gson gson = new GsonBuilder().serializeNulls().create();
+                Map<String, String> map = new HashMap<String, String>();
+                map.put("message", "To use application/octet-stream the query must contain only one column");
+                return Either.left(gson.toJson(map));
+            }
         }
     }
 

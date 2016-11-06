@@ -132,7 +132,7 @@ public class ApplicationServer {
 
     public static void main(String[] args){
 
-    	Map<String, Object> vals = null;
+        Map<String, Object> vals = null;
         try{
             vals = (Map<String, Object>) new Yaml()
                     .load(new FileInputStream(new File(args[0])));
@@ -246,12 +246,14 @@ public class ApplicationServer {
             Structure.Format format = Structure.Format.JSON;
 
             if(accept.isPresent()){
-                 if(accept.get().equals("text/csv"))
+                 if(accept.get().equals("application/json"))
+                    format = Structure.Format.JSON;
+                 else if(accept.get().equals("text/csv"))
                     format = Structure.Format.CSV;
 								 else if(accept.get().equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                     format = Structure.Format.XLSX;
-                 else if(accept.get().equals("application/json"))
-                    format = Structure.Format.JSON;
+								 else if(accept.get().equals("application/octet-stream"))
+                    format = Structure.Format.BINARY;
             }
 
             Boolean singular = plurality.isPresent() && plurality.get().equals("singular");
@@ -265,7 +267,7 @@ public class ApplicationServer {
                         response.type("application/json");
                     else if(format == Structure.Format.CSV)
                         response.type("text/csv");
-                    else{
+                    else if(format == Structure.Format.XLSX){
                         response.header("Content-Disposition", "attachment");
                         response.type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
                         response.status(200);
@@ -275,6 +277,8 @@ public class ApplicationServer {
                         raw.getOutputStream().close();
                         return raw;
                     }
+                    else 
+                        response.type("application/octet-stream");
                     response.status(200);
                     return result1.right().value().toString();
                 }else{
