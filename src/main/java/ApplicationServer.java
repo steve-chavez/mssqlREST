@@ -15,7 +15,6 @@ import com.ebay.xcelite.*;
 import java.util.*;
 import java.util.stream.*;
 import java.io.*;
-import org.yaml.snakeyaml.*;
 
 import com.zaxxer.hikari.*;
 
@@ -132,34 +131,28 @@ public class ApplicationServer {
 
     public static void main(String[] args){
 
-        Map<String, Object> vals = null;
-        try{
-            vals = (Map<String, Object>) new Yaml()
-                    .load(new FileInputStream(new File(args[0])));
-        }catch(Exception e){
-            System.out.println("Config file doesn't exit or is an invalid YAML format");
-            System.exit(0);
+        Optional<Util.Config> config = Util.fromYaml(args[0]);
+
+        if(!config.isPresent()){
+          System.out.println("Config file doesn't exist or is an invalid YAML format");
+          System.exit(0);
         }
 
         HikariDataSource ds = new HikariDataSource();
-        ds.setJdbcUrl(vals.get("url").toString());
-        ds.setUsername(vals.get("user").toString());
-        ds.setPassword(vals.get("password").toString());
+        ds.setJdbcUrl(config.get().url);
+        ds.setUsername(config.get().user);
+        ds.setPassword(config.get().password);
 
-        Spark.port((Integer)vals.get("port")); 
+        Spark.port(config.get().port); 
 
-        Optional<Object> optionalJwtRoutines = Optional.ofNullable(vals.get("jwtRoutines"));
-        List<String> jwtRoutines;
-        if(optionalJwtRoutines.isPresent())
-            jwtRoutines = (ArrayList<String>)optionalJwtRoutines.get();
-        else
-            jwtRoutines = new ArrayList<String>();
+        QueryExecuter queryExecuter = new QueryExecuter(ds, config.get().defaultRole);
 
-        String secret = vals.get("secret").toString(); 
+        String secret = config.get().secret; 
 
-        QueryExecuter queryExecuter = new QueryExecuter(ds, vals.get("defaultRole").toString());
+        Optional<String> optOrigin = config.get().origin;
 
-        Optional<Object> optOrigin = Optional.ofNullable(vals.get("origin"));
+        List<String> jwtRoutines = config.get().jwtRoutines
+          .orElse(new ArrayList<String>());
 
         // Headers:
         // Plurality: singular, plural
