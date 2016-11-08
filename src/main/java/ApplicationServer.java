@@ -131,7 +131,7 @@ public class ApplicationServer {
 
     public static void main(String[] args){
 
-        Optional<Util.Config> config = Util.fromYaml(args[0]);
+        Optional<Configurator.Config> config = Configurator.fromYaml(args[0]);
 
         if(!config.isPresent()){
           System.out.println("Config file doesn't exist or is an invalid YAML format");

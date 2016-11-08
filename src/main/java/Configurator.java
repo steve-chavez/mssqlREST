@@ -3,7 +3,7 @@ import java.io.*;
 import java.util.*;
 import org.yaml.snakeyaml.*;
 
-public class Util{
+public class Configurator{
 
   public static class Config{
     String url, user, password; 
