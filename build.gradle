@@ -21,7 +21,7 @@ dependencies {
        "org.functionaljava:functionaljava-java-core:4.5",
        "com.univocity:univocity-parsers:1.0.0",
        "io.jsonwebtoken:jjwt:0.6.0",
-       "com.github.SteveBash:xcelite:master-SNAPSHOT",
+       "com.github.steve-chavez:xcelite:master-SNAPSHOT",
        "io.fastjson:boon:0.11"
    )
    testCompile (
@@ -33,9 +33,7 @@ dependencies {
 
 }
 
-
 mainClassName = "ApplicationServer"
-
 
 jar {
     manifest { 
@@ -49,9 +47,14 @@ jar {
 
 run {
     systemProperty "file.encoding", "utf-8"
-    args "config-cloud.yml"
+    args "config-local.yml"
 }
 
-test {
-  testLogging.showStandardStreams = true
+task test(type: JavaExec, overwrite: true) {
+  classpath=sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
+
+  main = 'MainTest'
+
+  args "config-local.yml"
 }
+

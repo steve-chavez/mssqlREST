@@ -1,0 +1,18 @@
+
+url: jdbc:sqlserver://localhost:1433;database=xrest_test;
+
+user: sa
+
+password: admin01
+    
+defaultRole: anonymous
+
+secret: munilavictoria
+
+port: 9090
+
+jwtRoutines :
+    - login
+
+origin: http://localhost:9090
+
