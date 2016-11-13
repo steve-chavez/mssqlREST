@@ -1,10 +1,10 @@
 
 url: jdbc:sqlserver://localhost:1433;database=xrest_test;
 
-user: sa
+user: authenticator
 
-password: admin01
-    
+password: 2wsx!QAZ
+
 defaultRole: anonymous
 
 secret: munilavictoria
@@ -15,4 +15,3 @@ jwtRoutines :
     - login
 
 origin: http://localhost:9090
-

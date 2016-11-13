@@ -12,7 +12,7 @@ public class QueryExecuter{
 
     private DataSource ds;
     private String defaultRole;
-    private final String MISSING = "The resource doesn't exist or permission was denied"; 
+    private final String MISSING = "The resource doesn't exist or permission was denied";
 
     public QueryExecuter(DataSource ds, String defaultRole){
         this.ds = ds;
@@ -100,10 +100,10 @@ public class QueryExecuter{
     }
 
     public Either<Object, Object> selectFrom(
-            String tableName, Map<String, String> queryParams, 
+            String tableName, Map<String, String> queryParams,
             Optional<String> selectColumns,
             Optional<String> order,
-            Boolean singular, 
+            Boolean singular,
             Structure.Format format,
             Optional<String> role){
         try(Connection conn = this.ds.getConnection()){
@@ -119,9 +119,9 @@ public class QueryExecuter{
                 return Either.left(missingToJson());
             }else{
                 Structure.Table table = optionalTable.get();
-                String query = QueryBuilder.selectQuery(table, 
+                String query = QueryBuilder.selectQuery(table,
                         queryParams.keySet().toArray(
-                            new String[queryParams.size()]), 
+                            new String[queryParams.size()]),
                         selectColumns,
                         order);
                 System.out.println(query);
@@ -233,7 +233,7 @@ public class QueryExecuter{
             }else{
                 Structure.Table table = optionalTable.get();
                 String query = QueryBuilder.updateQuery(
-                        table, values.keySet().toArray(new String[values.size()]), 
+                        table, values.keySet().toArray(new String[values.size()]),
                         queryParams.keySet().toArray(new String[queryParams.size()])
                 );
                 System.out.println(query);
@@ -290,7 +290,7 @@ public class QueryExecuter{
     }
 
     public Either<Object, Map<String, Object>> callRoutine(
-            String funcName, Map<String, String> values, 
+            String funcName, Map<String, String> values,
             Optional<String> role
         ){
         try(Connection conn = this.ds.getConnection()){
@@ -306,7 +306,7 @@ public class QueryExecuter{
                 return Either.left(missingToJson());
             }else{
                 Structure.Routine routine = optionalRoutine.get();
-                String query = QueryBuilder.functionQuery(routine); 
+                String query = QueryBuilder.functionQuery(routine);
                 System.out.println(query);
                 Either<Object, Map<String, Object>> result;
                 try{
@@ -341,7 +341,7 @@ public class QueryExecuter{
         ResultSet rs = statement.executeQuery();
         if(rs.isBeforeFirst()){
             Structure.Table table = new Structure.Table();
-            table.name = tableName; 
+            table.name = tableName;
             while(rs.next()){
                 table.columns.put(rs.getString("column_name"), rs.getString("data_type"));
             }
@@ -376,7 +376,7 @@ public class QueryExecuter{
                     parameter.dataType = rs2.getString("data_type");
                     parameter.ordinalPosition = rs2.getInt("ordinal_position");
                     parameter.parameterMode = rs2.getString("parameter_mode");
-                    routine.parameters.put(parameter.name, parameter); 
+                    routine.parameters.put(parameter.name, parameter);
                 }
             }
             String query3 = "SELECT name, type_name(user_type_id) AS data_type FROM sys.all_columns WHERE object_id = object_id(?)";
@@ -385,7 +385,7 @@ public class QueryExecuter{
                 statement3.setString(1, routineName);
                 ResultSet rs3 = statement3.executeQuery();
                 while(rs3.next())
-                    routine.returnColumns.put(rs3.getString("name"), rs3.getString("data_type")); 
+                    routine.returnColumns.put(rs3.getString("name"), rs3.getString("data_type"));
             }
             return Optional.of(routine);
         }else

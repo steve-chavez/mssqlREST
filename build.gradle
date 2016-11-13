@@ -36,13 +36,13 @@ dependencies {
 mainClassName = "ApplicationServer"
 
 jar {
-    manifest { 
+    manifest {
         attributes "Main-Class": mainClassName
-    }  
-    doFirst {
-	    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } } 
     }
-    exclude 'META-INF/*.RSA', 'META-INF/*.SF','META-INF/*.DSA' 
+    doFirst {
+	    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    }
+    exclude 'META-INF/*.RSA', 'META-INF/*.SF','META-INF/*.DSA'
 }
 
 run {

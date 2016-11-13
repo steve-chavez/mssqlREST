@@ -3,3 +3,4 @@
 build/
 *.swp
 tags
+src/test/resources/all.sql

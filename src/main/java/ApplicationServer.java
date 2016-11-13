@@ -28,7 +28,7 @@ import java.io.*;
 import java.nio.file.*;
 
 public class ApplicationServer {
- 
+
     static final String COOKIE_NAME = "x-rest-jwt";
 
     private static Map<String, String> normalizeMap(Map<String, String[]> map){
@@ -41,7 +41,7 @@ public class ApplicationServer {
     private static List<Map<String, String>> csvToMap(Request request){
         CsvParser parser = new CsvParser(new CsvParserSettings());
         List<String[]> rows = parser.parseAll(new StringReader(request.body()));
-        List<Map<String, String>> mappedValues = 
+        List<Map<String, String>> mappedValues =
             new ArrayList<Map<String, String>>();
         String[] headers = rows.get(0);
         int length = headers.length;
@@ -78,7 +78,7 @@ public class ApplicationServer {
                 for(int j=0; j<headersSize; j++){
                     String header = headers.get(j);
                     if(header != null && !header.isEmpty())
-                        value.put(header, 
+                        value.put(header,
                                 values.get(j)==null?null:values.get(j).toString());
                 }
                 mappedValues.add(value);
@@ -143,11 +143,11 @@ public class ApplicationServer {
         ds.setUsername(config.get().user);
         ds.setPassword(config.get().password);
 
-        Spark.port(config.get().port); 
+        Spark.port(config.get().port);
 
         QueryExecuter queryExecuter = new QueryExecuter(ds, config.get().defaultRole);
 
-        String secret = config.get().secret; 
+        String secret = config.get().secret;
 
         Optional<String> optOrigin = config.get().origin;
 
@@ -252,8 +252,8 @@ public class ApplicationServer {
             Boolean singular = plurality.isPresent() && plurality.get().equals("singular");
 
             if(!resource.isPresent()){
-                Either<Object, Object> result1 = queryExecuter.selectFrom(table, 
-                        mapWithout, selectColumns, order, singular, format, 
+                Either<Object, Object> result1 = queryExecuter.selectFrom(table,
+                        mapWithout, selectColumns, order, singular, format,
                         getRoleFromCookieOrHeader(secret, request));
                 if(result1.isRight()){
                     if(format == Structure.Format.JSON)
@@ -270,7 +270,7 @@ public class ApplicationServer {
                         raw.getOutputStream().close();
                         return raw;
                     }
-                    else 
+                    else
                         response.type("application/octet-stream");
                     response.status(200);
                     return result1.right().value().toString();
@@ -280,7 +280,7 @@ public class ApplicationServer {
                     return result1.left().value().toString();
                 }
             }else{
-                Either<Object, Object> result2 = queryExecuter.selectTableMetaData(table, 
+                Either<Object, Object> result2 = queryExecuter.selectTableMetaData(table,
                         singular, getRoleFromCookieOrHeader(secret, request));
                 if(result2.isRight()){
                     response.type("application/json");
@@ -313,7 +313,7 @@ public class ApplicationServer {
             if(format==Structure.Format.JSON){
                 Gson gson = new Gson();
                 Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
-                Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"), 
+                Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
                         values, getRoleFromCookieOrHeader(secret, request));
                 if(result.isRight()){
                     response.type("application/json");
@@ -326,7 +326,7 @@ public class ApplicationServer {
                 }
             }else if(format==Structure.Format.CSV){
                 List<Map<String, String>> mappedValues = csvToMap(request);
-                Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"), 
+                Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
                         mappedValues, getRoleFromCookieOrHeader(secret, request));
                 if(result.isRight()){
                     response.type("application/json");
@@ -339,7 +339,7 @@ public class ApplicationServer {
                 }
             }else{
                 List<Map<String, String>> mappedValues = xlsxToMap(request);
-                Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"), 
+                Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
                         mappedValues, getRoleFromCookieOrHeader(secret, request));
                 if(result.isRight()){
                     response.type("application/json");
@@ -360,7 +360,7 @@ public class ApplicationServer {
 
             Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
             Map<String, String> map = normalizeMap(request.queryMap().toMap());
-            Either<Object, Object> result = queryExecuter.updateSet(request.params(":table"), 
+            Either<Object, Object> result = queryExecuter.updateSet(request.params(":table"),
                     values, map, getRoleFromCookieOrHeader(secret, request));
             if(result.isRight()){
                 response.type("application/json");
@@ -378,7 +378,7 @@ public class ApplicationServer {
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
 
             Map<String, String> map = normalizeMap(request.queryMap().toMap());
-            Either<Object, Object> result = queryExecuter.deleteFrom(request.params(":table"), 
+            Either<Object, Object> result = queryExecuter.deleteFrom(request.params(":table"),
                     map, getRoleFromCookieOrHeader(secret, request));
             if(result.isRight()){
                 response.type("application/json");
@@ -397,7 +397,7 @@ public class ApplicationServer {
             Gson gson = new GsonBuilder().serializeNulls().create();
 
             Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
-            Either<Object, Map<String, Object>> result = queryExecuter.callRoutine(request.params(":routine"), 
+            Either<Object, Map<String, Object>> result = queryExecuter.callRoutine(request.params(":routine"),
                 values, getRoleFromCookieOrHeader(secret, request));
             if(result.isRight()){
                 response.type("application/json");
