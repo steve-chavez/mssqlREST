@@ -38,20 +38,25 @@ public class QueryBuilder{
         return builder.toString();
     }
 
-    public static String insertQuery(Structure.Table table, List<String> columns){
+    public static String insertQuery(Structure.Table table, Set<String> columns){
         StringBuilder builder = new StringBuilder("INSERT INTO [");
         builder.append(table.name);
-        builder.append("](");
-        builder.append(columns.stream().collect(Collectors.joining(",")));
-        builder.append(") VALUES(");
-        builder.append(columns.stream().map( s -> "?" ).collect(Collectors.joining(",")));
-        builder.append(")");
+        builder.append("]");
+        if(!columns.isEmpty()){
+          builder.append("(");
+          builder.append(columns.stream().collect(Collectors.joining(",")));
+          builder.append(") VALUES (");
+          builder.append(columns.stream().map( s -> "?" ).collect(Collectors.joining(",")));
+          builder.append(")");
+        }
+        else
+          builder.append(" DEFAULT VALUES");
 
         return builder.toString();
     }
 
     public static String updateQuery(
-            Structure.Table table, 
+            Structure.Table table,
             String[] vals,
             String[] params
     ){
@@ -83,7 +88,7 @@ public class QueryBuilder{
     }
 
     public static String deleteQuery(
-            Structure.Table table, 
+            Structure.Table table,
             String[] params
     ){
         StringBuilder builder = new StringBuilder("DELETE FROM [");

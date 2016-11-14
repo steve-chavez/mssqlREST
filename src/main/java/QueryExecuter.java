@@ -158,7 +158,7 @@ public class QueryExecuter{
                 return Either.left(missingToJson());
             }else{
                 Structure.Table table = optionalTable.get();
-                String query = QueryBuilder.insertQuery(table, new ArrayList<String>(values.keySet()));
+                String query = QueryBuilder.insertQuery(table, values.keySet());
                 Either<Object, Object> result;
                 try{
                     PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, values);
@@ -196,7 +196,7 @@ public class QueryExecuter{
                 return Either.left(missingToJson());
             }else{
                 Structure.Table table = optionalTable.get();
-                String query = QueryBuilder.insertQuery(table, new ArrayList<String>(values.get(0).keySet()));
+                String query = QueryBuilder.insertQuery(table, values.get(0).keySet());
                 System.out.println(query);
                 int[] inserts;
                 Either<Object, Object> result;

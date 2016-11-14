@@ -30,6 +30,7 @@ import java.nio.file.*;
 public class ApplicationServer {
 
     static final String COOKIE_NAME = "x-rest-jwt";
+    static final Gson gson = new GsonBuilder().serializeNulls().create();
 
     private static Map<String, String> normalizeMap(Map<String, String[]> map){
         return map.entrySet().stream().collect(
@@ -38,9 +39,17 @@ public class ApplicationServer {
         ));
     }
 
-    private static List<Map<String, String>> csvToMap(Request request){
+    private static Map<String, String> jsonToMap(String body){
+        Map<String, String> emptyMap = Collections.emptyMap();
+        if(!body.isEmpty())
+          return gson.fromJson(body, new TypeToken<Map<String, String>>(){}.getType());
+        else
+          return emptyMap;
+    }
+
+    private static List<Map<String, String>> csvToMap(String body){
         CsvParser parser = new CsvParser(new CsvParserSettings());
-        List<String[]> rows = parser.parseAll(new StringReader(request.body()));
+        List<String[]> rows = parser.parseAll(new StringReader(body));
         List<Map<String, String>> mappedValues =
             new ArrayList<Map<String, String>>();
         String[] headers = rows.get(0);
@@ -56,10 +65,10 @@ public class ApplicationServer {
         return mappedValues;
     }
 
-    private static List<Map<String, String>> xlsxToMap(Request request){
+    private static List<Map<String, String>> xlsxToMap(HttpServletRequest hsr){
         try{
             List<Map<String, String>> mappedValues = new ArrayList();
-            Xcelite xcelite = new Xcelite(request.raw().getInputStream());
+            Xcelite xcelite = new Xcelite(hsr.getInputStream());
             XceliteSheet sheet = xcelite.getSheet("data_sheet");
             SheetReader<Collection<Object>> simpleReader = sheet.getSimpleReader();
             List<Collection<Object>> data =
@@ -311,10 +320,9 @@ public class ApplicationServer {
             }
 
             if(format==Structure.Format.JSON){
-                Gson gson = new Gson();
-                Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
+                Map<String, String> mappedValues = jsonToMap(request.body());
                 Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
-                        values, getRoleFromCookieOrHeader(secret, request));
+                        mappedValues, getRoleFromCookieOrHeader(secret, request));
                 if(result.isRight()){
                     response.type("application/json");
                     response.status(200);
@@ -325,7 +333,7 @@ public class ApplicationServer {
                     return result.left().value().toString();
                 }
             }else if(format==Structure.Format.CSV){
-                List<Map<String, String>> mappedValues = csvToMap(request);
+                List<Map<String, String>> mappedValues = csvToMap(request.body());
                 Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
                         mappedValues, getRoleFromCookieOrHeader(secret, request));
                 if(result.isRight()){
@@ -338,7 +346,7 @@ public class ApplicationServer {
                     return result.left().value().toString();
                 }
             }else{
-                List<Map<String, String>> mappedValues = xlsxToMap(request);
+                List<Map<String, String>> mappedValues = xlsxToMap(request.raw());
                 Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
                         mappedValues, getRoleFromCookieOrHeader(secret, request));
                 if(result.isRight()){
@@ -356,12 +364,11 @@ public class ApplicationServer {
         Spark.patch("/:table", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
-            Gson gson = new Gson();
 
-            Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
+            Map<String, String> mappedValues = jsonToMap(request.body());
             Map<String, String> map = normalizeMap(request.queryMap().toMap());
             Either<Object, Object> result = queryExecuter.updateSet(request.params(":table"),
-                    values, map, getRoleFromCookieOrHeader(secret, request));
+                    mappedValues, map, getRoleFromCookieOrHeader(secret, request));
             if(result.isRight()){
                 response.type("application/json");
                 response.status(200);
@@ -394,11 +401,10 @@ public class ApplicationServer {
         Spark.post("/rpc/:routine", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
-            Gson gson = new GsonBuilder().serializeNulls().create();
 
-            Map<String, String> values = gson.fromJson(request.body(), new TypeToken<Map<String, String>>(){}.getType());
+            Map<String, String> mappedValues = jsonToMap(request.body());
             Either<Object, Map<String, Object>> result = queryExecuter.callRoutine(request.params(":routine"),
-                values, getRoleFromCookieOrHeader(secret, request));
+                mappedValues, getRoleFromCookieOrHeader(secret, request));
             if(result.isRight()){
                 response.type("application/json");
                 response.status(200);
