@@ -6,9 +6,10 @@ import org.yaml.snakeyaml.*;
 public class Configurator{
 
   public static class Config{
-    String url, user, password; 
+    String url, user, password;
+    String schema;
     Integer port;
-    String defaultRole, secret; 
+    String defaultRole, secret;
     Optional<String> origin;
     Optional<List<String>> jwtRoutines;
   }
@@ -19,13 +20,14 @@ public class Configurator{
         .load(new FileInputStream(new File(path)));
 
       Config config = new Config();
-      config.url = vals.get("url").toString(); 
-      config.user = vals.get("user").toString(); 
-      config.password = vals.get("password").toString(); 
-      config.port = (Integer)vals.get("port"); 
+      config.url = vals.get("url").toString();
+      config.user = vals.get("user").toString();
+      config.password = vals.get("password").toString();
+      config.port = (Integer)vals.get("port");
       config.defaultRole = vals.get("defaultRole").toString();
-      config.secret = vals.get("secret").toString(); 
-      config.origin = Optional.ofNullable(vals.get("origin").toString()); 
+      config.secret = vals.get("secret").toString();
+      config.schema = (String)Optional.ofNullable(vals.get("schema")).orElse("dbo");
+      config.origin = Optional.ofNullable(vals.get("origin").toString());
       config.jwtRoutines = Optional.ofNullable((List<String>)vals.get("jwtRoutines"));
       return Optional.of(config);
     } catch (Exception e){

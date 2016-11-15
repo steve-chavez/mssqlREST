@@ -32,112 +32,6 @@ public class ApplicationServer {
     static final String COOKIE_NAME = "x-rest-jwt";
     static final Gson gson = new GsonBuilder().serializeNulls().create();
 
-    private static Map<String, String> normalizeMap(Map<String, String[]> map){
-        return map.entrySet().stream().collect(
-                Collectors.toMap(
-                    Map.Entry::getKey, e -> e.getValue()[0]
-        ));
-    }
-
-    private static Map<String, String> jsonToMap(String body){
-        Map<String, String> emptyMap = Collections.emptyMap();
-        if(!body.isEmpty())
-          return gson.fromJson(body, new TypeToken<Map<String, String>>(){}.getType());
-        else
-          return emptyMap;
-    }
-
-    private static List<Map<String, String>> csvToMap(String body){
-        CsvParser parser = new CsvParser(new CsvParserSettings());
-        List<String[]> rows = parser.parseAll(new StringReader(body));
-        List<Map<String, String>> mappedValues =
-            new ArrayList<Map<String, String>>();
-        String[] headers = rows.get(0);
-        int length = headers.length;
-        for(int i=1; i < rows.size(); i++){
-            String[] values = rows.get(i);
-            Map<String, String> attr = new LinkedHashMap<String, String>();
-            for(int j=0; j<length; j++){
-                attr.put(headers[j], values[j]);
-            }
-            mappedValues.add(attr);
-        }
-        return mappedValues;
-    }
-
-    private static List<Map<String, String>> xlsxToMap(HttpServletRequest hsr){
-        try{
-            List<Map<String, String>> mappedValues = new ArrayList();
-            Xcelite xcelite = new Xcelite(hsr.getInputStream());
-            XceliteSheet sheet = xcelite.getSheet("data_sheet");
-            SheetReader<Collection<Object>> simpleReader = sheet.getSimpleReader();
-            List<Collection<Object>> data =
-                new ArrayList<Collection<Object>>(simpleReader.read());
-
-            List<String> headers = data.get(0).stream()
-               .map(object -> (object != null ? object.toString() : null))
-               .collect(Collectors.toList());
-
-            Integer headersSize = headers.size();
-            Integer rowsSize = data.size();
-
-            for (int i=1; i<rowsSize; i++){
-                List<Object> values = new ArrayList(data.get(i));
-                Map<String, String> value = new LinkedHashMap<String, String>();
-                for(int j=0; j<headersSize; j++){
-                    String header = headers.get(j);
-                    if(header != null && !header.isEmpty())
-                        value.put(header,
-                                values.get(j)==null?null:values.get(j).toString());
-                }
-                mappedValues.add(value);
-            }
-            return mappedValues;
-        }catch(IOException ioe){
-            System.out.println(ioe.getMessage());
-            return null;
-        }
-    }
-
-
-    private static Optional<String> obtainBearer(String s){
-        if(s.isEmpty())
-            return Optional.empty();
-        else {
-            String[] arr = s.split(" ");
-            if(!arr[0].equalsIgnoreCase("Bearer"))
-                return Optional.empty();
-            else{
-                if(arr.length == 1)
-                    return Optional.empty();
-                else
-                    return Optional.of(arr[1]);
-            }
-        }
-    }
-
-    private static Optional<String> decodeGetRole(String secret, String jwt){
-        try{
-            Claims claims = Jwts.parser().setSigningKey(secret).parseClaimsJws(jwt).getBody();
-            return Optional.of(claims.get("role").toString());
-        }catch(Exception e){
-            return Optional.empty();
-        }
-    }
-
-    private static Optional<String> getRoleFromCookieOrHeader(String secret, Request request){
-        Optional<String> authorization = Optional.ofNullable(request.headers("Authorization"));
-        Optional<String> cookie = Optional.ofNullable(request.cookie(COOKIE_NAME));
-        if(cookie.isPresent()){
-            return decodeGetRole(secret, cookie.get());
-        }
-        else if(authorization.isPresent()){
-            Optional<String> bearer = obtainBearer(authorization.get());
-            return decodeGetRole(secret, bearer.get());
-        }
-        else return Optional.empty();
-    }
-
     public static void main(String[] args){
 
         Optional<Configurator.Config> config = Configurator.fromYaml(args[0]);
@@ -154,7 +48,7 @@ public class ApplicationServer {
 
         Spark.port(config.get().port);
 
-        QueryExecuter queryExecuter = new QueryExecuter(ds, config.get().defaultRole);
+        QueryExecuter queryExecuter = new QueryExecuter(config.get().schema, ds, config.get().defaultRole);
 
         String secret = config.get().secret;
 
@@ -420,6 +314,112 @@ public class ApplicationServer {
                 return result.left().value().toString();
             }
         });
+    }
+
+    private static Map<String, String> normalizeMap(Map<String, String[]> map){
+        return map.entrySet().stream().collect(
+                Collectors.toMap(
+                    Map.Entry::getKey, e -> e.getValue()[0]
+        ));
+    }
+
+    private static Map<String, String> jsonToMap(String body){
+        Map<String, String> emptyMap = Collections.emptyMap();
+        if(!body.isEmpty())
+          return gson.fromJson(body, new TypeToken<Map<String, String>>(){}.getType());
+        else
+          return emptyMap;
+    }
+
+    private static List<Map<String, String>> csvToMap(String body){
+        CsvParser parser = new CsvParser(new CsvParserSettings());
+        List<String[]> rows = parser.parseAll(new StringReader(body));
+        List<Map<String, String>> mappedValues =
+            new ArrayList<Map<String, String>>();
+        String[] headers = rows.get(0);
+        int length = headers.length;
+        for(int i=1; i < rows.size(); i++){
+            String[] values = rows.get(i);
+            Map<String, String> attr = new LinkedHashMap<String, String>();
+            for(int j=0; j<length; j++){
+                attr.put(headers[j], values[j]);
+            }
+            mappedValues.add(attr);
+        }
+        return mappedValues;
+    }
+
+    private static List<Map<String, String>> xlsxToMap(HttpServletRequest hsr){
+        try{
+            List<Map<String, String>> mappedValues = new ArrayList();
+            Xcelite xcelite = new Xcelite(hsr.getInputStream());
+            XceliteSheet sheet = xcelite.getSheet("data_sheet");
+            SheetReader<Collection<Object>> simpleReader = sheet.getSimpleReader();
+            List<Collection<Object>> data =
+                new ArrayList<Collection<Object>>(simpleReader.read());
+
+            List<String> headers = data.get(0).stream()
+               .map(object -> (object != null ? object.toString() : null))
+               .collect(Collectors.toList());
+
+            Integer headersSize = headers.size();
+            Integer rowsSize = data.size();
+
+            for (int i=1; i<rowsSize; i++){
+                List<Object> values = new ArrayList(data.get(i));
+                Map<String, String> value = new LinkedHashMap<String, String>();
+                for(int j=0; j<headersSize; j++){
+                    String header = headers.get(j);
+                    if(header != null && !header.isEmpty())
+                        value.put(header,
+                                values.get(j)==null?null:values.get(j).toString());
+                }
+                mappedValues.add(value);
+            }
+            return mappedValues;
+        }catch(IOException ioe){
+            System.out.println(ioe.getMessage());
+            return null;
+        }
+    }
+
+
+    private static Optional<String> obtainBearer(String s){
+        if(s.isEmpty())
+            return Optional.empty();
+        else {
+            String[] arr = s.split(" ");
+            if(!arr[0].equalsIgnoreCase("Bearer"))
+                return Optional.empty();
+            else{
+                if(arr.length == 1)
+                    return Optional.empty();
+                else
+                    return Optional.of(arr[1]);
+            }
+        }
+    }
+
+    private static Optional<String> decodeGetRole(String secret, String jwt){
+        try{
+            Claims claims = Jwts.parser().setSigningKey(secret).parseClaimsJws(jwt).getBody();
+            return Optional.of(claims.get("role").toString());
+        }catch(Exception e){
+            return Optional.empty();
+        }
+    }
+
+    private static Optional<String> getRoleFromCookieOrHeader(String secret, Request request){
+        Optional<String> authorization = Optional.ofNullable(request.headers("Authorization"));
+        Optional<String> cookie = Optional.ofNullable(request.cookie(COOKIE_NAME));
+        if(cookie.isPresent()){
+            return decodeGetRole(secret, cookie.get());
+        }
+        else if(authorization.isPresent()){
+            Optional<String> bearer = obtainBearer(authorization.get());
+            return decodeGetRole(secret, bearer.get());
+        }
+        else return Optional.empty();
     }
 }
 

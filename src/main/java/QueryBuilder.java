@@ -6,7 +6,7 @@ public class QueryBuilder{
 
     public static String selectQuery(
             Structure.Table table,
-            String[] params,
+            Set<String> params,
             Optional<String> selectColumns,
             Optional<String> order
         ){
@@ -18,18 +18,11 @@ public class QueryBuilder{
         else
             builder.append("*");
 
-        builder.append(" FROM [" + table.name + "]");
+        builder.append(" FROM " + quoteName(table.schema) + "." + quoteName(table.name) + " ");
 
-        List<String> questionParams = new ArrayList<String>();
-
-
-        for (String param : params) {
-            questionParams.add(param + " = ?");
-        }
-
-        if(questionParams.size()>0){
+        if(!params.isEmpty()){
             builder.append(" WHERE ");
-            builder.append(questionParams.stream().collect(Collectors.joining(" AND ")));
+            builder.append(params.stream().map( p -> quoteName(p) + " = ?").collect(Collectors.joining(" AND ")));
         }
 
         if(order.isPresent())
@@ -39,12 +32,11 @@ public class QueryBuilder{
     }
 
     public static String insertQuery(Structure.Table table, Set<String> columns){
-        StringBuilder builder = new StringBuilder("INSERT INTO [");
-        builder.append(table.name);
-        builder.append("]");
+        StringBuilder builder = new StringBuilder("INSERT INTO ");
+        builder.append(quoteName(table.schema) + "." + quoteName(table.name) + " ");
         if(!columns.isEmpty()){
           builder.append("(");
-          builder.append(columns.stream().collect(Collectors.joining(",")));
+          builder.append(columns.stream().map( s -> quoteName(s) ).collect(Collectors.joining(",")));
           builder.append(") VALUES (");
           builder.append(columns.stream().map( s -> "?" ).collect(Collectors.joining(",")));
           builder.append(")");
@@ -57,31 +49,17 @@ public class QueryBuilder{
 
     public static String updateQuery(
             Structure.Table table,
-            String[] vals,
-            String[] params
+            Set<String> vals,
+            Set<String> params
     ){
-        StringBuilder builder = new StringBuilder("UPDATE [");
-        builder.append(table.name);
-        builder.append("] SET ");
+        StringBuilder builder = new StringBuilder("UPDATE ");
+        builder.append(quoteName(table.schema) + "." + quoteName(table.name) + " ");
+        builder.append("SET ");
+        builder.append(vals.stream().map(v -> quoteName(v) + " = ?").collect(Collectors.joining(", ")));
 
-        List<String> questionValues = new ArrayList<String>();
-
-        for (String val : vals) {
-            questionValues.add(val + " = ?");
-        }
-
-        builder.append(questionValues.stream().collect(Collectors.joining(", ")));
-
-
-        List<String> questionParams = new ArrayList<String>();
-
-        for (String param : params) {
-            questionParams.add(param + " = ?");
-        }
-
-        if(questionParams.size() > 0){
+        if(!params.isEmpty()){
             builder.append(" WHERE ");
-            builder.append(questionParams.stream().collect(Collectors.joining(" AND ")));
+            builder.append(params.stream().map(p -> quoteName(p) + " = ?").collect(Collectors.joining(" AND ")));
         }
 
         return builder.toString();
@@ -89,21 +67,14 @@ public class QueryBuilder{
 
     public static String deleteQuery(
             Structure.Table table,
-            String[] params
+            Set<String> params
     ){
-        StringBuilder builder = new StringBuilder("DELETE FROM [");
-        builder.append(table.name);
-        builder.append("]");
+        StringBuilder builder = new StringBuilder("DELETE FROM ");
+        builder.append(quoteName(table.schema) + "." + quoteName(table.name) + " ");
 
-        List<String> questionParams = new ArrayList<String>();
-
-        for (String param : params) {
-            questionParams.add(param + " = ?");
-        }
-
-        if(questionParams.size() > 0){
+        if(!params.isEmpty()){
             builder.append(" WHERE ");
-            builder.append(questionParams.stream().collect(Collectors.joining(" AND ")));
+            builder.append(params.stream().map( p -> quoteName(p) + " = ?").collect(Collectors.joining(" AND ")));
         }
 
         return builder.toString();
@@ -113,10 +84,10 @@ public class QueryBuilder{
         StringBuilder builder;
         if(routine.type.equals("FUNCTION")){
             if(!routine.returnType.equals("TABLE"))
-                builder = new StringBuilder("SELECT dbo.");
+                builder = new StringBuilder("SELECT ");
             else
-                builder = new StringBuilder("SELECT * FROM dbo.");
-            builder.append(routine.name);
+                builder = new StringBuilder("SELECT * FROM ");
+            builder.append(quoteName(routine.schema) + "." + quoteName(routine.name) + " ");
             builder.append("(");
             List<String> questionParams =
                 Collections.nCopies(routine.parameters.size(), "?");
@@ -124,7 +95,7 @@ public class QueryBuilder{
             builder.append(")");
         }else{
             builder = new StringBuilder("{call ");
-            builder.append(routine.name);
+            builder.append(quoteName(routine.schema) + "." + quoteName(routine.name) + " ");
             builder.append("(");
             List<String> questionParams =
                 Collections.nCopies(routine.parameters.size(), "?");
@@ -133,4 +104,13 @@ public class QueryBuilder{
         }
         return builder.toString();
     }
+
+    //Does the same as `select quotename('something')`
+    //If 'something' contains ']', quotename replaces the ']' by ']]'. '[' is left as is.
+    //select quotename('some[thing]else')
+    //[some[thing]]else]
+    public static String quoteName(String s){
+      return "[" + s.replaceAll("]", "]]") + "]";
+    }
+
 }

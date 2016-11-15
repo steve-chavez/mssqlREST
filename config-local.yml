@@ -3,6 +3,8 @@ url: jdbc:sqlserver://localhost:1433;database=xrest_test;
 
 user: authenticator
 
+schema: api
+
 password: 2wsx!QAZ
 
 defaultRole: anonymous
