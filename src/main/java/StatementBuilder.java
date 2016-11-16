@@ -12,8 +12,8 @@ import java.nio.charset.*;
 public class StatementBuilder{
 
     public static PreparedStatement buildPreparedStatement(
-            Connection conn, 
-            String query, 
+            Connection conn,
+            String query,
             Structure.Routine routine,
             Map<String, String> values
     ) throws SQLException{
@@ -74,8 +74,8 @@ public class StatementBuilder{
     }
 
     public static PreparedStatement buildPreparedStatement(
-            Connection conn, 
-            String query, 
+            Connection conn,
+            String query,
             Structure.Table table,
             Map<String, String> values
     ) throws SQLException{
@@ -98,7 +98,7 @@ public class StatementBuilder{
                         break;
                     case "float":
                     case "real":
-                        //statement.setFloat(i, Float.parseFloat(entry.getValue())); 
+                        //statement.setFloat(i, Float.parseFloat(entry.getValue()));
                         statement.setDouble(i, Double.parseDouble(entry.getValue()));
                         break;
                     case "char":
@@ -136,8 +136,8 @@ public class StatementBuilder{
     }
 
     public static PreparedStatement buildBatchPreparedStatement(
-            Connection conn, 
-            String query, 
+            Connection conn,
+            String query,
             Structure.Table table,
             List<Map<String, String>> valuesList
     ) throws SQLException{
@@ -162,7 +162,7 @@ public class StatementBuilder{
                             break;
                         case "float":
                         case "real":
-                            //statement.setFloat(i, Float.parseFloat(entry.getValue())); 
+                            //statement.setFloat(i, Float.parseFloat(entry.getValue()));
                             statement.setDouble(i, Double.parseDouble(entry.getValue()));
                             break;
                         case "char":
@@ -202,8 +202,8 @@ public class StatementBuilder{
     }
 
     public static PreparedStatement buildPreparedStatement(
-            Connection conn, 
-            String query, 
+            Connection conn,
+            String query,
             Structure.Table table,
             Map<String, String> values,
             Map<String, String> queryParams
@@ -316,8 +316,8 @@ public class StatementBuilder{
     }
 
     public static CallableStatement buildCallableStatement(
-            Connection conn, 
-            String query, 
+            Connection conn,
+            String query,
             Structure.Routine routine,
             Map<String, String> values
     ) throws SQLException{

@@ -29,13 +29,35 @@ insert into api.projects values(3, 'project 3')
 
 go
 
-create function api.get_project(@id int)
+create function api.get_projects_lt(@id int)
 returns table
 as
 return(
     select *
     from api.projects
-    where id = @id
+    where id < @id
 )
+
+go
+
+create function api.get_names()
+returns @result table (
+    first_name varchar(256), last_name varchar(256)
+) as
+begin
+    insert into @result select 'John', 'Doe';
+    return;
+end;
+
+go
+
+create function api.plus(@a int, @b int)
+returns int
+as
+begin
+    declare @result int;
+    set @result = @a + @b;
+    return @result;
+end;
 
 go

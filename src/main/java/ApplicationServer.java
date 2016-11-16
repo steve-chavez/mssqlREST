@@ -297,17 +297,17 @@ public class ApplicationServer {
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
 
             Map<String, String> mappedValues = jsonToMap(request.body());
-            Either<Object, Map<String, Object>> result = queryExecuter.callRoutine(request.params(":routine"),
+            Either<Object, Object> result = queryExecuter.callRoutine(request.params(":routine"),
                 mappedValues, getRoleFromCookieOrHeader(secret, request));
             if(result.isRight()){
                 response.type("application/json");
                 response.status(200);
                 if(jwtRoutines.contains(request.params(":routine")))
                     return Jwts.builder()
-                        .setClaims(result.right().value())
+                        .setPayload(result.right().value().toString())
                         .signWith(SignatureAlgorithm.HS256, secret).compact();
                 else
-                    return gson.toJson(result.right().value());
+                    return result.right().value();
             }else{
                 response.type("application/json");
                 response.status(400);

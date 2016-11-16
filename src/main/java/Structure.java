@@ -15,7 +15,7 @@ public class Structure{
 
         @Override
         public String toString(){
-            return schema + name + columns.toString();
+            return schema + "." + name + columns.toString();
         }
 
     }
@@ -30,10 +30,18 @@ public class Structure{
 
         @Override
         public String toString(){
-            return schema + name + " : " +
+            return schema + "." + name + " : " +
                 String.join(",", Arrays.asList(type, returnType)) +
                 "; parameters : " + parameters.toString() +
                 "; returnColumns : " + returnColumns.toString();
+        }
+
+        public boolean isScalar(){
+            return !returnType.equals("TABLE");
+        }
+
+        public boolean isFunction(){
+            return type.equals("FUNCTION");
         }
     }
 

@@ -22,7 +22,7 @@ import fj.data.Either;
 
 public class ResultSetConverter {
 
-    public static Either<Object, Object> convert( ResultSet rs, Boolean singular, Structure.Format format)
+    public static Either<Object, Object> convert(ResultSet rs, Boolean singular, Structure.Format format, Optional<Structure.Routine> routine)
         throws SQLException {
 
         ResultSetMetaData rsmd = rs.getMetaData();
@@ -30,7 +30,11 @@ public class ResultSetConverter {
 
         if(format==Structure.Format.JSON){
             Gson gson = new GsonBuilder().serializeNulls().create();
-            if(singular){
+            if(routine.isPresent() && routine.get().isScalar()){
+              rs.next();
+              return Either.right(getColumnValue(rs, new Integer(1), routine.get().returnType));
+            }
+            else if(singular){
                 Map<String, Object> map = new HashMap();
                 while(rs.next()) {
                     for (int i=1; i<numColumns+1; i++) {
@@ -76,7 +80,7 @@ public class ResultSetConverter {
             writer.close();
             return Either.right(csvResult.toString());
         }else if(format==Structure.Format.XLSX){
-            Xcelite xcelite = new Xcelite();    
+            Xcelite xcelite = new Xcelite();
             XceliteSheet sheet = xcelite.createSheet("data_sheet");
             SheetWriter<Collection<Object>> simpleWriter = sheet.getSimpleWriter();
             List<Collection<Object>> data = new ArrayList<Collection<Object>>();
@@ -94,10 +98,9 @@ public class ResultSetConverter {
                 }
                 data.add(row);
             }
-            simpleWriter.write(data);   
+            simpleWriter.write(data);
             return Either.right(xcelite.getBytes());
-        //}else if(format==Structure.Format.BINARY){
-        }else{
+        }else{ //Structure.Format.BINARY
             if(numColumns == 1){
                 StringJoiner joiner = new StringJoiner("\n");
                 while(rs.next()) {
@@ -113,28 +116,14 @@ public class ResultSetConverter {
         }
     }
 
-    public static Map<String, Object> routineResultToMap( Structure.Routine routine, ResultSet rs)
+    public static Either<Object, Object> convert(CallableStatement cs, Structure.Routine routine)
         throws SQLException {
-
-        Map<String, Object> map = new HashMap<String, Object>();
-        while(rs.next()) 
-            if(!routine.returnType.equals("TABLE"))
-                map.put("result", getColumnValue(rs, new Integer(1), routine.returnType));
-            else
-                for(Map.Entry<String, String> entry : routine.returnColumns.entrySet()) {
-                    map.put(entry.getKey(), getColumnValue(rs, entry.getKey(), entry.getValue()));
-                }
-        return map;
-    }
-
-    public static Map<String, Object> routineResultToMap( Structure.Routine routine, CallableStatement cs)
-        throws SQLException {
-
-        Map<String, Object> map = new HashMap<String, Object>();
-        for(Map.Entry<String, Structure.Parameter> entry : routine.parameters.entrySet())
-            if(entry.getValue().parameterMode.equals("INOUT"))
-                map.put(entry.getKey(), getColumnValue(cs, entry.getKey(), entry.getValue().dataType));
-        return map;
+      Gson gson = new GsonBuilder().serializeNulls().create();
+      Map<String, Object> map = new HashMap<String, Object>();
+      for(Map.Entry<String, Structure.Parameter> entry : routine.parameters.entrySet())
+          if(entry.getValue().parameterMode.equals("INOUT"))
+              map.put(entry.getKey(), getColumnValue(cs, entry.getKey(), entry.getValue().dataType));
+      return Either.right(gson.toJson(map));
     }
 
     private static Object getColumnValue(ResultSet rs, String columnName, int type) throws SQLException{

@@ -40,7 +40,7 @@ public class QueryExecuter{
                 statement.setString(1, tableName);
                 statement.setString(2, this.schema);
                 ResultSet rs = statement.executeQuery();
-                result = ResultSetConverter.convert(rs, singular, Structure.Format.JSON);
+                result = ResultSetConverter.convert(rs, singular, Structure.Format.JSON, Optional.empty());
             } catch (SQLException e) {
                 result = Either.left(exceptionToJson(e));
             }
@@ -75,7 +75,7 @@ public class QueryExecuter{
                 statement.setString(1, actualRole);
                 statement.setString(2, this.schema);
                 ResultSet rs = statement.executeQuery();
-                result = ResultSetConverter.convert(rs, false, Structure.Format.JSON);
+                result = ResultSetConverter.convert(rs, false, Structure.Format.JSON, Optional.empty());
             } catch (SQLException e) {
                 result = Either.left(exceptionToJson(e));
             }
@@ -117,7 +117,7 @@ public class QueryExecuter{
                 try{
                     PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, queryParams);
                     ResultSet rs = statement.executeQuery();
-                    result = ResultSetConverter.convert(rs, singular, format);
+                    result = ResultSetConverter.convert(rs, singular, format, Optional.empty());
                 }catch(SQLException e){
                     result = Either.left(exceptionToJson(e));
                 }
@@ -274,7 +274,7 @@ public class QueryExecuter{
         }
     }
 
-    public Either<Object, Map<String, Object>> callRoutine(
+    public Either<Object, Object> callRoutine(
             String funcName, Map<String, String> values,
             Optional<String> role
         ){
@@ -293,20 +293,18 @@ public class QueryExecuter{
                 Structure.Routine routine = optionalRoutine.get();
                 String query = QueryBuilder.functionQuery(routine);
                 System.out.println(query);
-                Either<Object, Map<String, Object>> result;
+                Either<Object, Object> result;
                 try{
                     Map<String, Object> map = new HashMap<String, Object>();
                     CallableStatement cs = StatementBuilder
                         .buildCallableStatement(conn, query, routine, values);
-                    if(routine.type.equals("FUNCTION")){
-                        ResultSet rs = cs.executeQuery();
-                        map = ResultSetConverter.routineResultToMap(routine, rs);
+                    if(routine.isFunction()){
+                      ResultSet rs = cs.executeQuery();
+                      result = ResultSetConverter.convert(rs, false, Structure.Format.JSON, Optional.of(routine));
+                    }else{
+                      cs.execute();
+                      result = ResultSetConverter.convert(cs, routine);
                     }
-                    else{
-                        cs.execute();
-                        map = ResultSetConverter.routineResultToMap(routine, cs);
-                    }
-                    result = Either.right(map);
                 } catch (SQLException e) {
                     result = Either.left(exceptionToJson(e));
                 }
