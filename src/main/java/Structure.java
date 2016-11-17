@@ -57,5 +57,44 @@ public class Structure{
                 String.join(",", Arrays.asList(dataType,
                     ordinalPosition.toString(), parameterMode));
         }
+
+        public boolean isOut(){
+            return parameterMode.equals("INOUT") || parameterMode.equals("OUT");
+        }
+    }
+
+    public static int toSqlType(String type){
+      switch(type){
+        case "bigint":    return java.sql.Types.BIGINT;
+        case "smallint":  return java.sql.Types.SMALLINT;
+        case "int":       return java.sql.Types.INTEGER;
+        case "tinyint":   return java.sql.Types.TINYINT;
+
+        case "numeric":
+        case "decimal":   return java.sql.Types.DOUBLE;
+
+        case "float":
+        case "real":      return java.sql.Types.FLOAT;
+
+        case "char":
+        case "varchar":
+        case "text":      return java.sql.Types.VARCHAR;
+
+        case "nchar":
+        case "nvarchar":
+        case "ntext":     return java.sql.Types.NVARCHAR;
+
+        case "binary":
+        case "varbinary":
+        case "image":     return java.sql.Types.BLOB;
+
+        case "date":
+        case "datetime":
+        case "datetime2":
+        case "time":
+        case "timestamp": return java.sql.Types.VARCHAR;
+
+        default:          return java.sql.Types.OTHER;
+      }
     }
 }

@@ -32,7 +32,7 @@ public class ResultSetConverter {
             Gson gson = new GsonBuilder().serializeNulls().create();
             if(routine.isPresent() && routine.get().isScalar()){
               rs.next();
-              return Either.right(getColumnValue(rs, new Integer(1), routine.get().returnType));
+              return Either.right(getScalarValue(rs, Structure.toSqlType(routine.get().returnType)));
             }
             else if(singular){
                 Map<String, Object> map = new HashMap();
@@ -121,209 +121,73 @@ public class ResultSetConverter {
       Gson gson = new GsonBuilder().serializeNulls().create();
       Map<String, Object> map = new HashMap<String, Object>();
       for(Map.Entry<String, Structure.Parameter> entry : routine.parameters.entrySet())
-          if(entry.getValue().parameterMode.equals("INOUT"))
-              map.put(entry.getKey(), getColumnValue(cs, entry.getKey(), entry.getValue().dataType));
+          if(entry.getValue().isOut())
+              map.put(entry.getKey(), getParameterValue(cs, entry.getKey(), Structure.toSqlType(entry.getValue().dataType)));
       return Either.right(gson.toJson(map));
     }
 
     private static Object getColumnValue(ResultSet rs, String columnName, int type) throws SQLException{
-        Object o;
-        switch(type){
-            case java.sql.Types.ARRAY:
-                o = rs.getArray(columnName);
-                break;
-            case java.sql.Types.BIGINT:
-                o = rs.getInt(columnName);
-                break;
-            case java.sql.Types.BOOLEAN:
-                o = rs.getBoolean(columnName);
-                break;
-            case java.sql.Types.BLOB:
-                o = rs.getBlob(columnName);
-                break;
-            case java.sql.Types.DOUBLE:
-                o = rs.getDouble(columnName);
-                break;
-            case java.sql.Types.FLOAT:
-                o = rs.getFloat(columnName);
-                break;
-            case java.sql.Types.INTEGER:
-                o = rs.getInt(columnName);
-                break;
-            case java.sql.Types.NVARCHAR:
-                o = rs.getNString(columnName);
-                break;
-            case java.sql.Types.VARCHAR:
-                o = rs.getString(columnName);
-                break;
-            case java.sql.Types.TINYINT:
-                o = rs.getInt(columnName);
-                break;
-            case java.sql.Types.SMALLINT:
-                o = rs.getInt(columnName);
-                break;
-            case java.sql.Types.DATE:
-                o = rs.getString(columnName);
-                break;
-            case java.sql.Types.TIMESTAMP:
-                o = rs.getString(columnName);
-                break;
-            default:
-                o = rs.getObject(columnName);
-                break;
-        }
         if(rs.wasNull())
-            return null;
-        else
-            return o;
+          return null;
+        else switch(type){
+          case java.sql.Types.BIGINT: return rs.getInt(columnName);
+          case java.sql.Types.INTEGER: return rs.getInt(columnName);
+          case java.sql.Types.TINYINT: return rs.getInt(columnName);
+          case java.sql.Types.SMALLINT: return rs.getInt(columnName);
+          case java.sql.Types.BOOLEAN: return rs.getBoolean(columnName);
+          case java.sql.Types.BLOB: return rs.getBlob(columnName);
+          case java.sql.Types.DOUBLE: return rs.getDouble(columnName);
+          case java.sql.Types.FLOAT: return rs.getFloat(columnName);
+          case java.sql.Types.NVARCHAR: return rs.getNString(columnName);
+          case java.sql.Types.VARCHAR: return rs.getString(columnName);
+          case java.sql.Types.DATE: return rs.getString(columnName);
+          case java.sql.Types.TIMESTAMP: return rs.getString(columnName);
+          case java.sql.Types.ARRAY: return rs.getArray(columnName);
+          default: return rs.getObject(columnName);
+        }
     }
 
-
-    private static Object getColumnValue(ResultSet rs, String columnName, String type) throws SQLException{
-        Object o;
-        switch(type){
-            case "bigint":
-            case "smallint":
-            case "int":
-            case "tinyint":
-                o = rs.getInt(columnName);
-                break;
-            case "numeric":
-            case "decimal":
-                o = rs.getDouble(columnName);
-                break;
-            case "float":
-            case "real":
-                o = rs.getFloat(columnName);
-                break;
-            case "char":
-            case "varchar":
-            case "text":
-                o = rs.getString(columnName);
-                break;
-            case "nchar":
-            case "nvarchar":
-            case "ntext":
-                o = rs.getNString(columnName);
-                break;
-            case "binary":
-            case "varbinary":
-            case "image":
-                o = rs.getBlob(columnName);
-                break;
-            case "date":
-            case "datetime":
-            case "datetime2":
-            case "time":
-            case "timestamp":
-                o = rs.getString(columnName);
-                break;
-            default:
-                o = rs.getObject(columnName);
-                break;
-        }
-        if(rs.wasNull())
-            return null;
-        else
-            return o;
-    }
-
-    private static Object getColumnValue(ResultSet rs, int index, String type) throws SQLException{
-        Object o;
-        switch(type){
-            case "bigint":
-            case "smallint":
-            case "int":
-            case "tinyint":
-                o = rs.getInt(index);
-                break;
-            case "numeric":
-            case "decimal":
-                o = rs.getDouble(index);
-                break;
-            case "float":
-            case "real":
-                o = rs.getFloat(index);
-                break;
-            case "char":
-            case "varchar":
-            case "text":
-                o = rs.getString(index);
-                break;
-            case "nchar":
-            case "nvarchar":
-            case "ntext":
-                o = rs.getNString(index);
-                break;
-            case "binary":
-            case "varbinary":
-            case "image":
-                o = rs.getBlob(index);
-                break;
-            case "date":
-            case "datetime":
-            case "datetime2":
-            case "time":
-            case "timestamp":
-                o = rs.getString(index);
-                break;
-            default:
-                o = rs.getObject(index);
-                break;
-        }
-        if(rs.wasNull())
-            return null;
-        else
-            return o;
-    }
-
-    private static Object getColumnValue(CallableStatement cs, String index, String type)
+    //TODO: DRY and make this method unnecessary. Ideally cs.getResultSet() would work but it gives null.
+    private static Object getParameterValue(CallableStatement cs, String name, int type)
         throws SQLException{
-        Object o;
-        switch(type){
-            case "bigint":
-            case "smallint":
-            case "int":
-            case "tinyint":
-                o = cs.getInt(index);
-                break;
-            case "numeric":
-            case "decimal":
-                o = cs.getDouble(index);
-                break;
-            case "float":
-            case "real":
-                o = cs.getFloat(index);
-                break;
-            case "char":
-            case "varchar":
-            case "text":
-                o = cs.getString(index);
-                break;
-            case "nchar":
-            case "nvarchar":
-            case "ntext":
-                o = cs.getNString(index);
-                break;
-            case "binary":
-            case "varbinary":
-            case "image":
-                o = cs.getBlob(index);
-                break;
-            case "date":
-            case "datetime":
-            case "datetime2":
-            case "time":
-            case "timestamp":
-                o = cs.getString(index);
-                break;
-            default:
-                o = cs.getObject(index);
-                break;
-        }
         if(cs.wasNull())
-            return null;
-        else
-            return o;
+          return null;
+        else switch(type){
+          case java.sql.Types.BIGINT: return cs.getInt(name);
+          case java.sql.Types.INTEGER: return cs.getInt(name);
+          case java.sql.Types.TINYINT: return cs.getInt(name);
+          case java.sql.Types.SMALLINT: return cs.getInt(name);
+          case java.sql.Types.BOOLEAN: return cs.getBoolean(name);
+          case java.sql.Types.BLOB: return cs.getBlob(name);
+          case java.sql.Types.DOUBLE: return cs.getDouble(name);
+          case java.sql.Types.FLOAT: return cs.getFloat(name);
+          case java.sql.Types.NVARCHAR: return cs.getNString(name);
+          case java.sql.Types.VARCHAR: return cs.getString(name);
+          case java.sql.Types.DATE: return cs.getString(name);
+          case java.sql.Types.TIMESTAMP: return cs.getString(name);
+          case java.sql.Types.ARRAY: return cs.getArray(name);
+          default: return cs.getObject(name);
+        }
+    }
+
+    private static Object getScalarValue(ResultSet rs, int type) throws SQLException{
+        if(rs.wasNull())
+          return null;
+        else switch(type){
+          case java.sql.Types.BIGINT: return rs.getInt(1);
+          case java.sql.Types.INTEGER: return rs.getInt(1);
+          case java.sql.Types.TINYINT: return rs.getInt(1);
+          case java.sql.Types.SMALLINT: return rs.getInt(1);
+          case java.sql.Types.BOOLEAN: return rs.getBoolean(1);
+          case java.sql.Types.BLOB: return rs.getBlob(1);
+          case java.sql.Types.DOUBLE: return rs.getDouble(1);
+          case java.sql.Types.FLOAT: return rs.getFloat(1);
+          case java.sql.Types.NVARCHAR: return rs.getNString(1);
+          case java.sql.Types.VARCHAR: return rs.getString(1);
+          case java.sql.Types.DATE: return rs.getString(1);
+          case java.sql.Types.TIMESTAMP: return rs.getString(1);
+          case java.sql.Types.ARRAY: return rs.getArray(1);
+          default: return rs.getObject(1);
+        }
     }
 }
