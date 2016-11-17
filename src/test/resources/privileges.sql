@@ -8,4 +8,7 @@ grant select on api.get_names to anonymous
 -- grant execute functions that return scalars(weird, I know)
 grant execute on api.plus to anonymous
 
+-- grant execute on procedures
+grant execute on api.mult_xyz_by to anonymous
+
 go

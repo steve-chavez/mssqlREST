@@ -70,6 +70,15 @@ public class QueryTest {
           expect(res.code()).toEqual(200);
         });
       });
+      describe("with a PROCEDURE", () -> {
+        it("should respond with a JSON object of OUT parameters", () -> {
+          HttpResp res =  HTTP.post("http://localhost:9090/rpc/mult_xyz_by")
+            .body("{\"x\": 1, \"y\": 2, \"z\": 3, \"factor\": 4}".getBytes())
+            .execute();
+          expect(res.body()).toEqual("{\"x\":4,\"y\":8,\"z\":12}");
+          expect(res.code()).toEqual(200);
+        });
+      });
     });
   }
 }

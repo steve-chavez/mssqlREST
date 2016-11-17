@@ -61,3 +61,17 @@ begin
 end;
 
 go
+
+create procedure api.mult_xyz_by(
+  @x int out,
+  @y int out,
+  @z int out,
+  @factor int)
+as
+begin
+  set @x = @x * @factor;
+  set @y = @y * @factor;
+  set @z = @z * @factor;
+end;
+
+go
