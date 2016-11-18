@@ -101,7 +101,7 @@ public class QueryExecuter{
                 conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
             else
                 conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
-            Optional<Structure.Table> optionalTable = this.getTableStructure(tableName, conn);
+            Optional<Structure.Table> optionalTable = Structure.getTableStructure(this.schema, tableName, conn);
             if(!optionalTable.isPresent()){
                 conn.createStatement().execute("REVERT");
                 conn.commit();
@@ -139,7 +139,7 @@ public class QueryExecuter{
                 conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
             else
                 conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
-            Optional<Structure.Table> optionalTable = this.getTableStructure(tableName, conn);
+            Optional<Structure.Table> optionalTable = Structure.getTableStructure(this.schema, tableName, conn);
             if(!optionalTable.isPresent()){
                 conn.createStatement().execute("REVERT");
                 conn.commit();
@@ -178,7 +178,7 @@ public class QueryExecuter{
                 conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
             else
                 conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
-            Optional<Structure.Table> optionalTable = this.getTableStructure(tableName, conn);
+            Optional<Structure.Table> optionalTable = Structure.getTableStructure(this.schema, tableName, conn);
             if(!optionalTable.isPresent()){
                 conn.createStatement().execute("REVERT");
                 conn.commit();
@@ -213,7 +213,7 @@ public class QueryExecuter{
                 conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
             else
                 conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
-            Optional<Structure.Table> optionalTable = this.getTableStructure(tableName, conn);
+            Optional<Structure.Table> optionalTable = Structure.getTableStructure(this.schema, tableName, conn);
             if(!optionalTable.isPresent()){
                 conn.createStatement().execute("REVERT");
                 conn.commit();
@@ -247,7 +247,7 @@ public class QueryExecuter{
                 conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
             else
                 conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
-            Optional<Structure.Table> optionalTable = this.getTableStructure(tableName, conn);
+            Optional<Structure.Table> optionalTable = Structure.getTableStructure(this.schema, tableName, conn);
             if(!optionalTable.isPresent()){
                 conn.createStatement().execute("REVERT");
                 conn.commit();
@@ -284,7 +284,7 @@ public class QueryExecuter{
                 conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
             else
                 conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
-            Optional<Structure.Routine> optionalRoutine = this.getRoutineStructure(funcName, conn);
+            Optional<Structure.Routine> optionalRoutine = Structure.getRoutineStructure(this.schema, funcName, conn);
             if(!optionalRoutine.isPresent()){
                 conn.createStatement().execute("REVERT");
                 conn.commit();
@@ -295,7 +295,6 @@ public class QueryExecuter{
                 System.out.println(query);
                 Either<Object, Object> result;
                 try{
-                    Map<String, Object> map = new HashMap<String, Object>();
                     CallableStatement cs = StatementBuilder
                         .buildCallableStatement(conn, query, routine, values);
                     if(routine.isFunction()){
@@ -315,74 +314,6 @@ public class QueryExecuter{
         } catch (SQLException e) {
             return Either.left(exceptionToJson(e));
         }
-    }
-
-    public Optional<Structure.Table> getTableStructure(String tableName, Connection conn) throws SQLException{
-        String query = "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = ? AND table_schema = ?";
-        System.out.println(query);
-        PreparedStatement statement = conn.prepareStatement(query);
-        statement.setString(1, tableName);
-        statement.setString(2, this.schema);
-        ResultSet rs = statement.executeQuery();
-        if(rs.isBeforeFirst()){
-            Structure.Table table = new Structure.Table();
-            table.name = tableName;
-            table.schema = schema;
-            while(rs.next()){
-                table.columns.put(rs.getString("column_name"), rs.getString("data_type"));
-            }
-            return Optional.of(table);
-        }
-        else
-            return Optional.empty();
-    }
-
-    public Optional<Structure.Routine> getRoutineStructure(String routineName, Connection conn) throws SQLException{
-        Structure.Routine routine = new Structure.Routine();
-        String query1 = "SELECT routine_name, routine_schema, routine_type, data_type AS return_type FROM information_schema.routines WHERE routine_name = ? AND routine_schema = ?";
-        System.out.println(query1);
-        PreparedStatement statement1 = conn.prepareStatement(query1);
-        statement1.setString(1, routineName);
-        statement1.setString(2, this.schema);
-        ResultSet rs1 = statement1.executeQuery();
-        if(rs1.isBeforeFirst()){
-            while(rs1.next()){
-                routine.schema = rs1.getString("routine_schema");
-                routine.name = rs1.getString("routine_name");
-                routine.type = rs1.getString("routine_type");
-                routine.returnType = rs1.getString("return_type");
-            }
-            String query2 = "SELECT parameter_name, ordinal_position, data_type, parameter_mode FROM information_schema.parameters WHERE specific_name = ? AND specific_schema = ?";
-            System.out.println(query2);
-            PreparedStatement statement2 = conn.prepareStatement(query2);
-            statement2.setString(1, routineName);
-            statement2.setString(2, this.schema);
-            ResultSet rs2 = statement2.executeQuery();
-            while(rs2.next()){
-                //SQL Server gets a parameter with ordinal_position of 0 to indicate return type
-                //this is redundant since it was previously obtained
-                if(rs2.getInt("ordinal_position") > 0){
-                    Structure.Parameter parameter = new Structure.Parameter();
-                    parameter.name = rs2.getString("parameter_name").substring(1);
-                    parameter.dataType = rs2.getString("data_type");
-                    parameter.ordinalPosition = rs2.getInt("ordinal_position");
-                    parameter.parameterMode = rs2.getString("parameter_mode");
-                    routine.parameters.put(parameter.name, parameter);
-                }
-            }
-            //Get the RETURNS TABLE structure
-            String query3 = "SELECT name, type_name(user_type_id) AS data_type FROM sys.all_columns WHERE object_id = object_id(?)";
-            System.out.println(query3);
-            if(routine.returnType != null && routine.returnType.equals("TABLE")){
-                PreparedStatement statement3 = conn.prepareStatement(query3);
-                statement3.setString(1, QueryBuilder.quoteName(routine.schema) + "." + QueryBuilder.quoteName(routine.name));
-                ResultSet rs3 = statement3.executeQuery();
-                while(rs3.next())
-                    routine.returnColumns.put(rs3.getString("name"), rs3.getString("data_type"));
-            }
-            return Optional.of(routine);
-        }else
-            return Optional.empty();
     }
 
     private final String MISSING = "The resource doesn't exist or permission was denied";

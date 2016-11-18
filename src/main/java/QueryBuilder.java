@@ -82,7 +82,7 @@ public class QueryBuilder{
 
     public static String functionQuery(Structure.Routine routine){
         StringBuilder builder;
-        if(routine.type.equals("FUNCTION")){
+        if(routine.isFunction()){
             if(!routine.returnType.equals("TABLE"))
                 builder = new StringBuilder("SELECT ");
             else

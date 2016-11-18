@@ -1,20 +1,10 @@
 
 import spark.*;
-import com.google.gson.reflect.TypeToken;
-import com.google.gson.*;
 
-import com.univocity.parsers.common.processor.*;
-import com.univocity.parsers.conversions.*;
-import com.univocity.parsers.csv.*;
-
-import com.ebay.xcelite.sheet.*;
-import com.ebay.xcelite.reader.*;
-import com.ebay.xcelite.writer.*;
-import com.ebay.xcelite.*;
-
+import java.io.*;
 import java.util.*;
 import java.util.stream.*;
-import java.io.*;
+import javax.servlet.http.*;
 
 import com.zaxxer.hikari.*;
 
@@ -22,15 +12,12 @@ import io.jsonwebtoken.*;
 
 import fj.data.Either;
 
-import javax.servlet.http.*;
-
 import java.io.*;
 import java.nio.file.*;
 
 public class ApplicationServer {
 
     static final String COOKIE_NAME = "x-rest-jwt";
-    static final Gson gson = new GsonBuilder().serializeNulls().create();
 
     public static void main(String[] args){
 
@@ -110,29 +97,7 @@ public class ApplicationServer {
         Spark.get("/:table", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
 
-            Map<String, String> map = normalizeMap(request.queryMap().toMap());
-
-            //order query param
-            String optOrder = map.entrySet().stream()
-                .filter( x -> x.getKey().equalsIgnoreCase("order"))
-                .map( x -> x.getValue())
-                .collect(Collectors.joining());
-            Optional<String> order = optOrder.isEmpty()?
-                Optional.empty():Optional.of(optOrder);
-
-            //select query param
-            String optSelect = map.entrySet().stream()
-                .filter( x -> x.getKey().equalsIgnoreCase("select"))
-                .map( x -> x.getValue())
-                .collect(Collectors.joining());
-            Optional<String> selectColumns = optSelect.isEmpty()?
-                Optional.empty():Optional.of(optSelect);
-
-            //Other query params
-            Map<String, String> mapWithout = map.entrySet().stream()
-                .filter( x -> !x.getKey().equalsIgnoreCase("order")&&
-                              !x.getKey().equalsIgnoreCase("select"))
-                .collect(Collectors.toMap( x -> x.getKey(), x -> x.getValue()));
+            Parser.QueryParams queryParams = new Parser.QueryParams(request.queryMap().toMap());
 
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
             Optional<String> plurality = Optional.ofNullable(request.headers("Plurality"));
@@ -156,7 +121,7 @@ public class ApplicationServer {
 
             if(!resource.isPresent()){
                 Either<Object, Object> result1 = queryExecuter.selectFrom(table,
-                        mapWithout, selectColumns, order, singular, format,
+                        queryParams.filters, queryParams.select, queryParams.order, singular, format,
                         getRoleFromCookieOrHeader(secret, request));
                 if(result1.isRight()){
                     if(format == Structure.Format.JSON)
@@ -214,7 +179,7 @@ public class ApplicationServer {
             }
 
             if(format==Structure.Format.JSON){
-                Map<String, String> mappedValues = jsonToMap(request.body());
+                Map<String, String> mappedValues = Parser.jsonToMap(request.body());
                 Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
                         mappedValues, getRoleFromCookieOrHeader(secret, request));
                 if(result.isRight()){
@@ -227,7 +192,7 @@ public class ApplicationServer {
                     return result.left().value().toString();
                 }
             }else if(format==Structure.Format.CSV){
-                List<Map<String, String>> mappedValues = csvToMap(request.body());
+                List<Map<String, String>> mappedValues = Parser.csvToMap(request.body());
                 Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
                         mappedValues, getRoleFromCookieOrHeader(secret, request));
                 if(result.isRight()){
@@ -240,7 +205,7 @@ public class ApplicationServer {
                     return result.left().value().toString();
                 }
             }else{
-                List<Map<String, String>> mappedValues = xlsxToMap(request.raw());
+                List<Map<String, String>> mappedValues = Parser.xlsxToMap(request.raw());
                 Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
                         mappedValues, getRoleFromCookieOrHeader(secret, request));
                 if(result.isRight()){
@@ -259,10 +224,10 @@ public class ApplicationServer {
             System.out.println(request.requestMethod() + " : " + request.url());
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
 
-            Map<String, String> mappedValues = jsonToMap(request.body());
-            Map<String, String> map = normalizeMap(request.queryMap().toMap());
+            Map<String, String> mappedValues = Parser.jsonToMap(request.body());
+            Parser.QueryParams queryParams = new Parser.QueryParams(request.queryMap().toMap());
             Either<Object, Object> result = queryExecuter.updateSet(request.params(":table"),
-                    mappedValues, map, getRoleFromCookieOrHeader(secret, request));
+                    mappedValues, queryParams.filters, getRoleFromCookieOrHeader(secret, request));
             if(result.isRight()){
                 response.type("application/json");
                 response.status(200);
@@ -278,9 +243,9 @@ public class ApplicationServer {
             System.out.println(request.requestMethod() + " : " + request.url());
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
 
-            Map<String, String> map = normalizeMap(request.queryMap().toMap());
+            Parser.QueryParams queryParams = new Parser.QueryParams(request.queryMap().toMap());
             Either<Object, Object> result = queryExecuter.deleteFrom(request.params(":table"),
-                    map, getRoleFromCookieOrHeader(secret, request));
+                    queryParams.filters, getRoleFromCookieOrHeader(secret, request));
             if(result.isRight()){
                 response.type("application/json");
                 response.status(200);
@@ -296,7 +261,7 @@ public class ApplicationServer {
             System.out.println(request.requestMethod() + " : " + request.url());
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
 
-            Map<String, String> mappedValues = jsonToMap(request.body());
+            Map<String, String> mappedValues = Parser.jsonToMap(request.body());
             Either<Object, Object> result = queryExecuter.callRoutine(request.params(":routine"),
                 mappedValues, getRoleFromCookieOrHeader(secret, request));
             if(result.isRight()){
@@ -315,74 +280,6 @@ public class ApplicationServer {
             }
         });
     }
-
-    private static Map<String, String> normalizeMap(Map<String, String[]> map){
-        return map.entrySet().stream().collect(
-                Collectors.toMap(
-                    Map.Entry::getKey, e -> e.getValue()[0]
-        ));
-    }
-
-    private static Map<String, String> jsonToMap(String body){
-        Map<String, String> emptyMap = Collections.emptyMap();
-        if(!body.isEmpty())
-          return gson.fromJson(body, new TypeToken<Map<String, String>>(){}.getType());
-        else
-          return emptyMap;
-    }
-
-    private static List<Map<String, String>> csvToMap(String body){
-        CsvParser parser = new CsvParser(new CsvParserSettings());
-        List<String[]> rows = parser.parseAll(new StringReader(body));
-        List<Map<String, String>> mappedValues =
-            new ArrayList<Map<String, String>>();
-        String[] headers = rows.get(0);
-        int length = headers.length;
-        for(int i=1; i < rows.size(); i++){
-            String[] values = rows.get(i);
-            Map<String, String> attr = new LinkedHashMap<String, String>();
-            for(int j=0; j<length; j++){
-                attr.put(headers[j], values[j]);
-            }
-            mappedValues.add(attr);
-        }
-        return mappedValues;
-    }
-
-    private static List<Map<String, String>> xlsxToMap(HttpServletRequest hsr){
-        try{
-            List<Map<String, String>> mappedValues = new ArrayList();
-            Xcelite xcelite = new Xcelite(hsr.getInputStream());
-            XceliteSheet sheet = xcelite.getSheet("data_sheet");
-            SheetReader<Collection<Object>> simpleReader = sheet.getSimpleReader();
-            List<Collection<Object>> data =
-                new ArrayList<Collection<Object>>(simpleReader.read());
-
-            List<String> headers = data.get(0).stream()
-               .map(object -> (object != null ? object.toString() : null))
-               .collect(Collectors.toList());
-
-            Integer headersSize = headers.size();
-            Integer rowsSize = data.size();
-
-            for (int i=1; i<rowsSize; i++){
-                List<Object> values = new ArrayList(data.get(i));
-                Map<String, String> value = new LinkedHashMap<String, String>();
-                for(int j=0; j<headersSize; j++){
-                    String header = headers.get(j);
-                    if(header != null && !header.isEmpty())
-                        value.put(header,
-                                values.get(j)==null?null:values.get(j).toString());
-                }
-                mappedValues.add(value);
-            }
-            return mappedValues;
-        }catch(IOException ioe){
-            System.out.println(ioe.getMessage());
-            return null;
-        }
-    }
-
 
     private static Optional<String> obtainBearer(String s){
         if(s.isEmpty())
