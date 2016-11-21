@@ -12,33 +12,56 @@ public class QueryTest {
 
   {
     describe("POST resource", () -> {
-      it("should succeed for json payload", () -> {
-        HttpResp res =  HTTP.post("http://localhost:9090/projects")
-          .body("{\"id\": 4, \"name\": \"project 4\"}".getBytes())
-          .execute();
-        expect(res.code()).toEqual(200);
+      describe("JSON", () -> {
+        it("should succeed for json payload", () -> {
+          HttpResp res =  HTTP.post("http://localhost:9090/projects")
+            .body("{\"id\": 4, \"name\": \"project 4\"}".getBytes())
+            .execute();
+          expect(res.code()).toEqual(200);
+        });
+
+        it("should succeed for empty json payload", () -> {
+          HttpResp res =  HTTP.post("http://localhost:9090/items")
+            .body("{}".getBytes())
+            .execute();
+          expect(res.code()).toEqual(200);
+        });
+
+        it("should succeed for empty payload", () -> {
+          HttpResp res =  HTTP.post("http://localhost:9090/items")
+            .body("".getBytes())
+            .execute();
+          expect(res.code()).toEqual(200);
+        });
+
+        it("should fail for invalid json", () -> {
+          HttpResp res =  HTTP.post("http://localhost:9090/projects")
+            .body("'id'".getBytes())
+            .execute();
+          expect(res.body()).toEqual("{\"message\":\"Could not parse JSON object\"}");
+          expect(res.code()).toEqual(400);
+        });
       });
 
-      it("should succeed for empty json payload", () -> {
-        HttpResp res =  HTTP.post("http://localhost:9090/items")
-          .body("{}".getBytes())
-          .execute();
-        expect(res.code()).toEqual(200);
-      });
+      // Curl should be tested with: `-d $''` or --data-binary. Otherwise it strips the newlines
+      // curl -H "Content-Type: text/csv" -d $'id,name\n11,project 11\n' l:9090/projects
+      describe("CSV", () -> {
+        it("should succeed for json payload", () -> {
+          HttpResp res =  HTTP.post("http://localhost:9090/entities")
+            .header("Content-Type", "text/csv")
+            .body("id,name\n1,entity 1\n2,entity 2\n3, entity 3".getBytes())
+            .execute();
+          expect(res.code()).toEqual(200);
+        });
 
-      it("should succeed for empty payload", () -> {
-        HttpResp res =  HTTP.post("http://localhost:9090/items")
-          .body("".getBytes())
-          .execute();
-        expect(res.code()).toEqual(200);
-      });
-
-      it("should fail for invalid json", () -> {
-        HttpResp res =  HTTP.post("http://localhost:9090/projects")
-          .body("'id'".getBytes())
-          .execute();
-        expect(res.body()).toEqual("{\"message\":\"Could not parse JSON object\"}");
-        expect(res.code()).toEqual(400);
+        it("should fail for invalid csv", () -> {
+          HttpResp res =  HTTP.post("http://localhost:9090/entities")
+            .header("Content-Type", "text/csv")
+            .body("'id'".getBytes())
+            .execute();
+          expect(res.body()).toEqual("{\"message\":\"Could not parse CSV payload\"}");
+          expect(res.code()).toEqual(400);
+        });
       });
     });
 

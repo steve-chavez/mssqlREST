@@ -1,5 +1,6 @@
 grant select, insert, update, delete on api.items to anonymous
 grant select, insert, update, delete on api.projects to anonymous
+grant select, insert, update, delete on api.entities to anonymous
 
 -- grant select on functions that return tables
 grant select on api.get_projects_lt to anonymous

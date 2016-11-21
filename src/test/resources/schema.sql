@@ -75,3 +75,11 @@ begin
 end;
 
 go
+
+create table api.entities (
+  id int not null,
+  name varchar(50) not null,
+  constraint entity_pk primary key (id)
+)
+
+go
