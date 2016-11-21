@@ -4,6 +4,8 @@ import java.util.*;
 import java.util.stream.*;
 import javax.servlet.http.*;
 
+import fj.data.Either;
+
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.*;
 
@@ -18,35 +20,42 @@ import com.ebay.xcelite.*;
 
 public class Parser{
 
-  static final Gson gson = new GsonBuilder().serializeNulls().create();
+  static final Gson gson = new GsonBuilder().disableHtmlEscaping().serializeNulls().create();
 
-  public static Map<String, String> jsonToMap(String body){
+  public static Either<String, Map<String, String>> jsonToMap(String body){
       Map<String, String> emptyMap = Collections.emptyMap();
       if(!body.isEmpty())
-        return gson.fromJson(body, new TypeToken<Map<String, String>>(){}.getType());
+        try{
+          return Either.right(gson.fromJson(body, new TypeToken<Map<String, String>>(){}.getType()));
+        }catch(Exception e){
+          System.out.println(e.toString());
+          return Either.left("Could not parse JSON object");
+        }
       else
-        return emptyMap;
+        return Either.right(emptyMap);
   }
 
-  public static List<Map<String, String>> csvToMap(String body){
+  public static Either<String, List<Map<String, String>>> csvToMap(String body){
       CsvParser parser = new CsvParser(new CsvParserSettings());
       List<String[]> rows = parser.parseAll(new StringReader(body));
       List<Map<String, String>> mappedValues =
           new ArrayList<Map<String, String>>();
       String[] headers = rows.get(0);
-      int length = headers.length;
       for(int i=1; i < rows.size(); i++){
           String[] values = rows.get(i);
           Map<String, String> attr = new LinkedHashMap<String, String>();
-          for(int j=0; j<length; j++){
+          for(int j=0; j < headers.length; j++){
               attr.put(headers[j], values[j]);
           }
           mappedValues.add(attr);
       }
-      return mappedValues;
+      if(!mappedValues.isEmpty())
+        return Either.right(mappedValues);
+      else
+        return Either.left("Could not parse CSV payload");
   }
 
-  public static List<Map<String, String>> xlsxToMap(HttpServletRequest hsr){
+  public static Either<String, List<Map<String, String>>> xlsxToMap(HttpServletRequest hsr){
       try{
           List<Map<String, String>> mappedValues = new ArrayList();
           Xcelite xcelite = new Xcelite(hsr.getInputStream());
@@ -73,10 +82,10 @@ public class Parser{
               }
               mappedValues.add(value);
           }
-          return mappedValues;
+          return Either.right(mappedValues);
       }catch(IOException ioe){
-          System.out.println(ioe.getMessage());
-          return null;
+          System.out.println(ioe.toString());
+          return Either.left("Could not parse XLSX payload");
       }
   }
 

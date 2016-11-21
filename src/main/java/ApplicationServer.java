@@ -170,53 +170,84 @@ public class ApplicationServer {
 
             Structure.Format format = Structure.Format.JSON;
             if(contentType.isPresent()){
-                if(contentType.get().equals("text/csv"))
-                    format = Structure.Format.CSV;
-                if(contentType.get().equals("application/json"))
-                    format = Structure.Format.JSON;
-                if(contentType.get().equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                    format = Structure.Format.XLSX;
+              switch(contentType.get()){
+                case "text/csv":
+                  format = Structure.Format.CSV; break;
+                case "application/json":
+                  format = Structure.Format.JSON; break;
+                case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+                  format = Structure.Format.XLSX; break;
+                default:
+                  format = Structure.Format.OTHER; break;
+              }
             }
 
-            if(format==Structure.Format.JSON){
-                Map<String, String> mappedValues = Parser.jsonToMap(request.body());
-                Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
-                        mappedValues, getRoleFromCookieOrHeader(secret, request));
-                if(result.isRight()){
-                    response.type("application/json");
-                    response.status(200);
-                    return result.right().value().toString();
+            switch(format){
+              // Must use Structure.Format.JSON without the Structure.Format or we get the compile error:
+              // an enum switch case label must be the unqualified name of an enumeration constant
+              case JSON: {
+                Either<String, Map<String, String>> parsedMap = Parser.jsonToMap(request.body());
+                if(parsedMap.isRight()){
+                  Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
+                          parsedMap.right().value(), getRoleFromCookieOrHeader(secret, request));
+                  if(result.isRight()){
+                      response.type("application/json");
+                      response.status(200);
+                      return result.right().value().toString();
+                  }else{
+                      response.type("application/json");
+                      response.status(500);
+                      return result.left().value().toString();
+                  }
                 }else{
                     response.type("application/json");
                     response.status(400);
-                    return result.left().value().toString();
+                    return Errors.messageToJson(parsedMap.left().value());
                 }
-            }else if(format==Structure.Format.CSV){
-                List<Map<String, String>> mappedValues = Parser.csvToMap(request.body());
-                Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
-                        mappedValues, getRoleFromCookieOrHeader(secret, request));
-                if(result.isRight()){
-                    response.type("application/json");
-                    response.status(200);
-                    return result.right().value().toString();
+              }
+              case CSV: {
+                Either<String, List<Map<String, String>>> parsedMap = Parser.csvToMap(request.body());
+                if(parsedMap.isRight()){
+                    Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
+                            parsedMap.right().value(), getRoleFromCookieOrHeader(secret, request));
+                    if(result.isRight()){
+                        response.type("application/json");
+                        response.status(200);
+                        return result.right().value().toString();
+                    }else{
+                        response.type("application/json");
+                        response.status(500);
+                        return result.left().value().toString();
+                    }
                 }else{
                     response.type("application/json");
                     response.status(400);
-                    return result.left().value().toString();
+                    return Errors.messageToJson(parsedMap.left().value());
                 }
-            }else{
-                List<Map<String, String>> mappedValues = Parser.xlsxToMap(request.raw());
+              }
+              case XLSX: {
+                Either<String, List<Map<String, String>>> parsedMap = Parser.xlsxToMap(request.raw());
                 Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
-                        mappedValues, getRoleFromCookieOrHeader(secret, request));
-                if(result.isRight()){
-                    response.type("application/json");
-                    response.status(200);
-                    return result.right().value().toString();
+                        parsedMap.right().value(), getRoleFromCookieOrHeader(secret, request));
+                if(parsedMap.isRight()){
+                  if(result.isRight()){
+                      response.type("application/json");
+                      response.status(200);
+                      return result.right().value().toString();
+                  }else{
+                      response.type("application/json");
+                      response.status(500);
+                      return result.left().value().toString();
+                  }
                 }else{
-                    response.type("application/json");
-                    response.status(400);
-                    return result.left().value().toString();
+                  response.type("application/json");
+                  response.status(400);
+                  return Errors.messageToJson(parsedMap.left().value());
                 }
+              }
+              default:
+                response.status(406);
+                return null;
             }
         });
 
@@ -224,18 +255,25 @@ public class ApplicationServer {
             System.out.println(request.requestMethod() + " : " + request.url());
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
 
-            Map<String, String> mappedValues = Parser.jsonToMap(request.body());
-            Parser.QueryParams queryParams = new Parser.QueryParams(request.queryMap().toMap());
-            Either<Object, Object> result = queryExecuter.updateSet(request.params(":table"),
-                    mappedValues, queryParams.filters, getRoleFromCookieOrHeader(secret, request));
-            if(result.isRight()){
-                response.type("application/json");
-                response.status(200);
-                return result.right().value().toString();
-            }else{
-                response.type("application/json");
-                response.status(400);
-                return result.left().value().toString();
+            Either<String, Map<String, String>> parsedMap = Parser.jsonToMap(request.body());
+            if(parsedMap.isRight()){
+              Parser.QueryParams queryParams = new Parser.QueryParams(request.queryMap().toMap());
+              Either<Object, Object> result = queryExecuter.updateSet(request.params(":table"),
+                      parsedMap.right().value(), queryParams.filters, getRoleFromCookieOrHeader(secret, request));
+              if(result.isRight()){
+                  response.type("application/json");
+                  response.status(200);
+                  return result.right().value().toString();
+              }else{
+                  response.type("application/json");
+                  response.status(500);
+                  return result.left().value().toString();
+              }
+            }
+            else{
+              response.type("application/json");
+              response.status(400);
+              return Errors.messageToJson(parsedMap.left().value());
             }
         });
 
@@ -261,22 +299,28 @@ public class ApplicationServer {
             System.out.println(request.requestMethod() + " : " + request.url());
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
 
-            Map<String, String> mappedValues = Parser.jsonToMap(request.body());
-            Either<Object, Object> result = queryExecuter.callRoutine(request.params(":routine"),
-                mappedValues, getRoleFromCookieOrHeader(secret, request));
-            if(result.isRight()){
-                response.type("application/json");
-                response.status(200);
-                if(jwtRoutines.contains(request.params(":routine")))
-                    return Jwts.builder()
-                        .setPayload(result.right().value().toString())
-                        .signWith(SignatureAlgorithm.HS256, secret).compact();
-                else
-                    return result.right().value();
+            Either<String, Map<String, String>> parsedMap = Parser.jsonToMap(request.body());
+            if(parsedMap.isRight()){
+              Either<Object, Object> result = queryExecuter.callRoutine(request.params(":routine"),
+                  parsedMap.right().value(), getRoleFromCookieOrHeader(secret, request));
+              if(result.isRight()){
+                  response.type("application/json");
+                  response.status(200);
+                  if(jwtRoutines.contains(request.params(":routine")))
+                      return Jwts.builder()
+                          .setPayload(result.right().value().toString())
+                          .signWith(SignatureAlgorithm.HS256, secret).compact();
+                  else
+                      return result.right().value();
+              }else{
+                  response.type("application/json");
+                  response.status(400);
+                  return result.left().value().toString();
+              }
             }else{
                 response.type("application/json");
                 response.status(400);
-                return result.left().value().toString();
+                return Errors.messageToJson(parsedMap.left().value());
             }
         });
     }

@@ -42,14 +42,14 @@ public class QueryExecuter{
                 ResultSet rs = statement.executeQuery();
                 result = ResultSetConverter.convert(rs, singular, Structure.Format.JSON, Optional.empty());
             } catch (SQLException e) {
-                result = Either.left(exceptionToJson(e));
+                result = Either.left(Errors.exceptionToJson(e));
             }
             conn.createStatement().execute("REVERT");
             conn.commit();
             return result;
         } catch (SQLException e) {
             //This exception is only for connection
-            return Either.left(exceptionToJson(e));
+            return Either.left(Errors.exceptionToJson(e));
         }
     }
 
@@ -77,14 +77,14 @@ public class QueryExecuter{
                 ResultSet rs = statement.executeQuery();
                 result = ResultSetConverter.convert(rs, false, Structure.Format.JSON, Optional.empty());
             } catch (SQLException e) {
-                result = Either.left(exceptionToJson(e));
+                result = Either.left(Errors.exceptionToJson(e));
             }
             conn.createStatement().execute("REVERT");
             conn.commit();
             return result;
         } catch (SQLException e) {
             //This exception is only for connection
-            return Either.left(exceptionToJson(e));
+            return Either.left(Errors.exceptionToJson(e));
         }
     }
 
@@ -105,7 +105,7 @@ public class QueryExecuter{
             if(!optionalTable.isPresent()){
                 conn.createStatement().execute("REVERT");
                 conn.commit();
-                return Either.left(missingToJson());
+                return Either.left(Errors.missingError());
             }else{
                 Structure.Table table = optionalTable.get();
                 String query = QueryBuilder.selectQuery(table,
@@ -119,7 +119,7 @@ public class QueryExecuter{
                     ResultSet rs = statement.executeQuery();
                     result = ResultSetConverter.convert(rs, singular, format, Optional.empty());
                 }catch(SQLException e){
-                    result = Either.left(exceptionToJson(e));
+                    result = Either.left(Errors.exceptionToJson(e));
                 }
                 conn.createStatement().execute("REVERT");
                 conn.commit();
@@ -127,7 +127,7 @@ public class QueryExecuter{
             }
         } catch (SQLException e) {
             //This exception is only for connection
-            return Either.left(exceptionToJson(e));
+            return Either.left(Errors.exceptionToJson(e));
         }
     }
 
@@ -143,7 +143,7 @@ public class QueryExecuter{
             if(!optionalTable.isPresent()){
                 conn.createStatement().execute("REVERT");
                 conn.commit();
-                return Either.left(missingToJson());
+                return Either.left(Errors.missingError());
             }else{
                 Structure.Table table = optionalTable.get();
                 String query = QueryBuilder.insertQuery(table, values.keySet());
@@ -158,7 +158,7 @@ public class QueryExecuter{
                         id = rs.getInt(1);
                     result = Either.right(id);
                 }catch(SQLException e){
-                    result = Either.left(exceptionToJson(e));
+                    result = Either.left(Errors.exceptionToJson(e));
                 }
                 conn.createStatement().execute("REVERT");
                 conn.commit();
@@ -166,7 +166,7 @@ public class QueryExecuter{
             }
         } catch (SQLException e) {
             //This exception is only for connection
-            return Either.left(exceptionToJson(e));
+            return Either.left(Errors.exceptionToJson(e));
         }
     }
 
@@ -182,7 +182,7 @@ public class QueryExecuter{
             if(!optionalTable.isPresent()){
                 conn.createStatement().execute("REVERT");
                 conn.commit();
-                return Either.left(missingToJson());
+                return Either.left(Errors.missingError());
             }else{
                 Structure.Table table = optionalTable.get();
                 String query = QueryBuilder.insertQuery(table, values.get(0).keySet());
@@ -194,7 +194,7 @@ public class QueryExecuter{
                     inserts = statement.executeBatch();
                     result = Either.right(inserts.length);
                 } catch (SQLException e) {
-                    result = Either.left(exceptionToJson(e));
+                    result = Either.left(Errors.exceptionToJson(e));
                 }
                 conn.createStatement().execute("REVERT");
                 conn.commit();
@@ -202,7 +202,7 @@ public class QueryExecuter{
             }
         } catch (SQLException e) {
             //This exception is only for connection
-            return Either.left(exceptionToJson(e));
+            return Either.left(Errors.exceptionToJson(e));
         }
     }
 
@@ -217,7 +217,7 @@ public class QueryExecuter{
             if(!optionalTable.isPresent()){
                 conn.createStatement().execute("REVERT");
                 conn.commit();
-                return Either.left(missingToJson());
+                return Either.left(Errors.missingError());
             }else{
                 Structure.Table table = optionalTable.get();
                 String query = QueryBuilder.updateQuery(table, values.keySet(), queryParams.keySet());
@@ -228,7 +228,7 @@ public class QueryExecuter{
                     statement.executeUpdate();
                     result = Either.right("");
                 } catch (SQLException e) {
-                    result = Either.left(exceptionToJson(e));
+                    result = Either.left(Errors.exceptionToJson(e));
                 }
                 conn.createStatement().execute("REVERT");
                 conn.commit();
@@ -236,7 +236,7 @@ public class QueryExecuter{
             }
         } catch (SQLException e) {
             //This exception is only for connection
-            return Either.left(exceptionToJson(e));
+            return Either.left(Errors.exceptionToJson(e));
         }
     }
 
@@ -251,7 +251,7 @@ public class QueryExecuter{
             if(!optionalTable.isPresent()){
                 conn.createStatement().execute("REVERT");
                 conn.commit();
-                return Either.left(missingToJson());
+                return Either.left(Errors.missingError());
             }else{
                 Structure.Table table = optionalTable.get();
                 String query = QueryBuilder.deleteQuery(table, queryParams.keySet());
@@ -262,7 +262,7 @@ public class QueryExecuter{
                     statement.executeUpdate();
                     result = Either.right("");
                 } catch (SQLException e) {
-                    result = Either.left(exceptionToJson(e));
+                    result = Either.left(Errors.exceptionToJson(e));
                 }
                 conn.createStatement().execute("REVERT");
                 conn.commit();
@@ -270,7 +270,7 @@ public class QueryExecuter{
             }
         } catch (SQLException e) {
             //This exception is only for connection
-            return Either.left(exceptionToJson(e));
+            return Either.left(Errors.exceptionToJson(e));
         }
     }
 
@@ -288,7 +288,7 @@ public class QueryExecuter{
             if(!optionalRoutine.isPresent()){
                 conn.createStatement().execute("REVERT");
                 conn.commit();
-                return Either.left(missingToJson());
+                return Either.left(Errors.missingError());
             }else{
                 Structure.Routine routine = optionalRoutine.get();
                 String query = QueryBuilder.functionQuery(routine);
@@ -305,32 +305,15 @@ public class QueryExecuter{
                       result = ResultSetConverter.convert(cs, routine);
                     }
                 } catch (SQLException e) {
-                    result = Either.left(exceptionToJson(e));
+                    result = Either.left(Errors.exceptionToJson(e));
                 }
                 conn.createStatement().execute("REVERT");
                 conn.commit();
                 return result;
             }
         } catch (SQLException e) {
-            return Either.left(exceptionToJson(e));
+            return Either.left(Errors.exceptionToJson(e));
         }
-    }
-
-    private final String MISSING = "The resource doesn't exist or permission was denied";
-
-    public String exceptionToJson(SQLException e){
-        Map<String, Object> map = new HashMap();
-        map.put("message", e.getMessage());
-        map.put("code", e.getErrorCode());
-        Gson gson = new GsonBuilder().serializeNulls().create();
-        return gson.toJson(map);
-    }
-
-    public String missingToJson(){
-        Map<String, String> map = new HashMap();
-        map.put("message", MISSING);
-        Gson gson = new GsonBuilder().serializeNulls().create();
-        return gson.toJson(map);
     }
 
 }

@@ -32,6 +32,14 @@ public class QueryTest {
           .execute();
         expect(res.code()).toEqual(200);
       });
+
+      it("should fail for invalid json", () -> {
+        HttpResp res =  HTTP.post("http://localhost:9090/projects")
+          .body("'id'".getBytes())
+          .execute();
+        expect(res.body()).toEqual("{\"message\":\"Could not parse JSON object\"}");
+        expect(res.code()).toEqual(400);
+      });
     });
 
     describe("GET resource", () -> {
