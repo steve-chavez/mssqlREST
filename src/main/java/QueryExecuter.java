@@ -12,21 +12,15 @@ public class QueryExecuter{
 
     private DataSource ds;
     private String schema;
-    private String defaultRole;
 
-    public QueryExecuter(String schema, DataSource ds, String defaultRole){
+    public QueryExecuter(String schema, DataSource ds){
         this.schema = schema;
         this.ds = ds;
-        this.defaultRole = defaultRole;
     }
 
-    public Either<Object, Object> selectTableMetaData(String tableName, Boolean singular, Optional<String> role){
+    public Either<Object, Object> selectTableMetaData(String tableName, Boolean singular, String role){
         try(Connection conn = this.ds.getConnection()){
-            conn.setAutoCommit(false);
-            if(role.isPresent())
-                conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
-            else
-                conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
+            conn.createStatement().execute(String.format("EXEC AS USER='%s'", role));
             String query =
               "SELECT CHARACTER_MAXIMUM_LENGTH AS max_length, COLUMN_DEFAULT AS [default], " +
               "CONVERT(BIT, (CASE WHEN IS_NULLABLE = 'YES' THEN 1 ELSE 0 END)) AS nullable, " +
@@ -48,20 +42,15 @@ public class QueryExecuter{
             conn.commit();
             return result;
         } catch (SQLException e) {
-            //This exception is only for connection
+            //This exception is only for connection. Not using REVERT.
             return Either.left(Errors.exceptionToJson(e));
         }
     }
 
-    public Either<Object, Object> selectAllPrivilegedTables(Optional<String> role){
+    public Either<Object, Object> selectAllPrivilegedTables(String role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
-            String actualRole = this.defaultRole;
-            if(role.isPresent()){
-                actualRole = role.get();
-                conn.createStatement().execute(String.format("EXEC AS USER='%s'", actualRole));
-            } else
-                conn.createStatement().execute(String.format("EXEC AS USER='%s'", actualRole));
+            conn.createStatement().execute(String.format("EXEC AS USER='%s'", role));
             String query = "SELECT table_schema AS [schema], table_name AS name, " +
                 "CONVERT(BIT, MAX(CASE WHEN privilege_type = 'SELECT' THEN 1 ELSE 0 END )) AS selectable,"+
                 " CONVERT(BIT, MAX(CASE WHEN privilege_type = 'INSERT' THEN 1 ELSE 0 END )) AS insertable,"+
@@ -72,7 +61,7 @@ public class QueryExecuter{
             Either<Object, Object> result;
             try{
                 PreparedStatement statement = conn.prepareStatement(query);
-                statement.setString(1, actualRole);
+                statement.setString(1, role);
                 statement.setString(2, this.schema);
                 ResultSet rs = statement.executeQuery();
                 result = ResultSetConverter.convert(rs, false, Structure.Format.JSON, Optional.empty());
@@ -83,7 +72,6 @@ public class QueryExecuter{
             conn.commit();
             return result;
         } catch (SQLException e) {
-            //This exception is only for connection
             return Either.left(Errors.exceptionToJson(e));
         }
     }
@@ -94,13 +82,10 @@ public class QueryExecuter{
             Optional<String> order,
             Boolean singular,
             Structure.Format format,
-            Optional<String> role){
+            String role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
-            if(role.isPresent())
-                conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
-            else
-                conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
+            conn.createStatement().execute(String.format("EXEC AS USER='%s'", role));
             Optional<Structure.Table> optionalTable = Structure.getTableStructure(this.schema, tableName, conn);
             if(!optionalTable.isPresent()){
                 conn.createStatement().execute("REVERT");
@@ -126,19 +111,14 @@ public class QueryExecuter{
                 return result;
             }
         } catch (SQLException e) {
-            //This exception is only for connection
             return Either.left(Errors.exceptionToJson(e));
         }
     }
 
-    //Single
-    public Either<Object, Object> insertInto(String tableName, Map<String, String> values, Optional<String> role){
+    public Either<Object, Object> insertInto(String tableName, Map<String, String> values, String role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
-            if(role.isPresent())
-                conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
-            else
-                conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
+            conn.createStatement().execute(String.format("EXEC AS USER='%s'", role));
             Optional<Structure.Table> optionalTable = Structure.getTableStructure(this.schema, tableName, conn);
             if(!optionalTable.isPresent()){
                 conn.createStatement().execute("REVERT");
@@ -165,19 +145,14 @@ public class QueryExecuter{
                 return result;
             }
         } catch (SQLException e) {
-            //This exception is only for connection
             return Either.left(Errors.exceptionToJson(e));
         }
     }
 
-    //Batch
-    public Either<Object, Object> insertInto(String tableName, List<Map<String, String>> values, Optional<String> role){
+    public Either<Object, Object> batchInsertInto(String tableName, List<Map<String, String>> values, String role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
-            if(role.isPresent())
-                conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
-            else
-                conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
+            conn.createStatement().execute(String.format("EXEC AS USER='%s'", role));
             Optional<Structure.Table> optionalTable = Structure.getTableStructure(this.schema, tableName, conn);
             if(!optionalTable.isPresent()){
                 conn.createStatement().execute("REVERT");
@@ -201,18 +176,14 @@ public class QueryExecuter{
                 return result;
             }
         } catch (SQLException e) {
-            //This exception is only for connection
             return Either.left(Errors.exceptionToJson(e));
         }
     }
 
-    public Either<Object, Object> updateSet(String tableName, Map<String, String> values, Map<String, String> queryParams, Optional<String> role){
+    public Either<Object, Object> updateSet(String tableName, Map<String, String> values, Map<String, String> queryParams, String role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
-            if(role.isPresent())
-                conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
-            else
-                conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
+            conn.createStatement().execute(String.format("EXEC AS USER='%s'", role));
             Optional<Structure.Table> optionalTable = Structure.getTableStructure(this.schema, tableName, conn);
             if(!optionalTable.isPresent()){
                 conn.createStatement().execute("REVERT");
@@ -235,18 +206,14 @@ public class QueryExecuter{
                 return result;
             }
         } catch (SQLException e) {
-            //This exception is only for connection
             return Either.left(Errors.exceptionToJson(e));
         }
     }
 
-    public Either<Object, Object> deleteFrom(String tableName, Map<String, String> queryParams, Optional<String> role){
+    public Either<Object, Object> deleteFrom(String tableName, Map<String, String> queryParams, String role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
-            if(role.isPresent())
-                conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
-            else
-                conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
+            conn.createStatement().execute(String.format("EXEC AS USER='%s'", role));
             Optional<Structure.Table> optionalTable = Structure.getTableStructure(this.schema, tableName, conn);
             if(!optionalTable.isPresent()){
                 conn.createStatement().execute("REVERT");
@@ -269,7 +236,6 @@ public class QueryExecuter{
                 return result;
             }
         } catch (SQLException e) {
-            //This exception is only for connection
             return Either.left(Errors.exceptionToJson(e));
         }
     }
@@ -279,14 +245,11 @@ public class QueryExecuter{
             Map<String, String> values,
             Structure.Format format,
             Boolean singular,
-            Optional<String> role
+            String role
         ){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
-            if(role.isPresent())
-                conn.createStatement().execute(String.format("EXEC AS USER='%s'", role.get()));
-            else
-                conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
+            conn.createStatement().execute(String.format("EXEC AS USER='%s'", role));
             Optional<Structure.Routine> optionalRoutine = Structure.getRoutineStructure(this.schema, funcName, conn);
             if(!optionalRoutine.isPresent()){
                 conn.createStatement().execute("REVERT");

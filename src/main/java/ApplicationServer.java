@@ -35,7 +35,9 @@ public class ApplicationServer {
 
         Spark.port(config.get().port);
 
-        QueryExecuter queryExecuter = new QueryExecuter(config.get().schema, ds, config.get().defaultRole);
+        QueryExecuter queryExecuter = new QueryExecuter(config.get().schema, ds);
+
+        String defaultRole = config.get().defaultRole;
 
         String secret = config.get().secret;
 
@@ -82,7 +84,7 @@ public class ApplicationServer {
         Spark.get("/", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
             Either<Object, Object> result = queryExecuter.selectAllPrivilegedTables(
-                    getRoleFromCookieOrHeader(secret, request));
+                    getRole(secret, request, defaultRole));
             if(result.isRight()){
                 response.type("application/json");
                 response.status(200);
@@ -114,7 +116,7 @@ public class ApplicationServer {
               if(!resource.isPresent()){
                   Either<Object, Object> result = queryExecuter.selectFrom(table,
                           queryParams.filters, queryParams.select, queryParams.order, singular, format,
-                          getRoleFromCookieOrHeader(secret, request));
+                          getRole(secret, request, defaultRole));
                   if(result.isRight()){
                       if(format == Structure.Format.XLSX){
                           response.header("Content-Disposition", "attachment");
@@ -136,7 +138,7 @@ public class ApplicationServer {
                   }
               }else{
                   Either<Object, Object> result = queryExecuter.selectTableMetaData(table,
-                          singular, getRoleFromCookieOrHeader(secret, request));
+                          singular, getRole(secret, request, defaultRole));
                   if(result.isRight()){
                       response.type("application/json");
                       response.status(200);
@@ -165,7 +167,7 @@ public class ApplicationServer {
                 Either<String, Map<String, String>> parsedMap = Parser.jsonToMap(request.body());
                 if(parsedMap.isRight()){
                   Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
-                          parsedMap.right().value(), getRoleFromCookieOrHeader(secret, request));
+                          parsedMap.right().value(), getRole(secret, request, defaultRole));
                   if(result.isRight()){
                       response.status(200);
                       return result.right().value().toString();
@@ -183,8 +185,8 @@ public class ApplicationServer {
               case CSV: {
                 Either<String, List<Map<String, String>>> parsedMap = Parser.csvToMap(request.body());
                 if(parsedMap.isRight()){
-                    Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
-                            parsedMap.right().value(), getRoleFromCookieOrHeader(secret, request));
+                    Either<Object, Object> result = queryExecuter.batchInsertInto(request.params(":table"),
+                            parsedMap.right().value(), getRole(secret, request, defaultRole));
                     if(result.isRight()){
                         response.status(200);
                         return result.right().value().toString();
@@ -201,8 +203,8 @@ public class ApplicationServer {
               }
               case XLSX: {
                 Either<String, List<Map<String, String>>> parsedMap = Parser.xlsxToMap(request.raw());
-                Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
-                        parsedMap.right().value(), getRoleFromCookieOrHeader(secret, request));
+                Either<Object, Object> result = queryExecuter.batchInsertInto(request.params(":table"),
+                        parsedMap.right().value(), getRole(secret, request, defaultRole));
                 if(parsedMap.isRight()){
                   if(result.isRight()){
                       response.status(200);
@@ -232,7 +234,7 @@ public class ApplicationServer {
             if(parsedMap.isRight()){
               Parser.QueryParams queryParams = new Parser.QueryParams(request.queryMap().toMap());
               Either<Object, Object> result = queryExecuter.updateSet(request.params(":table"),
-                      parsedMap.right().value(), queryParams.filters, getRoleFromCookieOrHeader(secret, request));
+                      parsedMap.right().value(), queryParams.filters, getRole(secret, request, defaultRole));
               if(result.isRight()){
                   response.type("application/json");
                   response.status(200);
@@ -256,7 +258,7 @@ public class ApplicationServer {
 
             Parser.QueryParams queryParams = new Parser.QueryParams(request.queryMap().toMap());
             Either<Object, Object> result = queryExecuter.deleteFrom(request.params(":table"),
-                    queryParams.filters, getRoleFromCookieOrHeader(secret, request));
+                    queryParams.filters, getRole(secret, request, defaultRole));
             if(result.isRight()){
                 response.type("application/json");
                 response.status(200);
@@ -282,7 +284,7 @@ public class ApplicationServer {
               Either<String, Map<String, String>> parsedMap = Parser.jsonToMap(request.body());
               if(parsedMap.isRight()){
                 Either<Object, Object> result = queryExecuter.callRoutine(request.params(":routine"),
-                    parsedMap.right().value(), format, false, getRoleFromCookieOrHeader(secret, request));
+                    parsedMap.right().value(), format, false, getRole(secret, request, defaultRole));
                 if(result.isRight()){
                     if(jwtRoutines.contains(request.params(":routine")))
                         return Jwts.builder()
@@ -312,6 +314,10 @@ public class ApplicationServer {
               }
             }
         });
+    }
+
+    private static String getRole(String secret, Request request, String defaultRole){
+      return getRoleFromCookieOrHeader(secret, request).orElse(defaultRole);
     }
 
     private static Optional<String> getRoleFromCookieOrHeader(String secret, Request request){
