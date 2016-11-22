@@ -78,8 +78,7 @@ public class ApplicationServer {
             response.status(200);
             return "";
         });
-        //----------------------------
-        //
+
         Spark.get("/", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
             Either<Object, Object> result = queryExecuter.selectAllPrivilegedTables(
@@ -102,63 +101,52 @@ public class ApplicationServer {
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
             Optional<String> plurality = Optional.ofNullable(request.headers("Plurality"));
             Optional<String> accept = Optional.ofNullable(request.headers("Accept"));
-
-            String table = request.params(":table");
-            Structure.Format format = Structure.Format.JSON;
-
-            if(accept.isPresent()){
-                 if(accept.get().equals("application/json"))
-                    format = Structure.Format.JSON;
-                 else if(accept.get().equals("text/csv"))
-                    format = Structure.Format.CSV;
-								 else if(accept.get().equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-                    format = Structure.Format.XLSX;
-								 else if(accept.get().equals("application/octet-stream"))
-                    format = Structure.Format.BINARY;
-            }
-
             Boolean singular = plurality.isPresent() && plurality.get().equals("singular");
 
-            if(!resource.isPresent()){
-                Either<Object, Object> result1 = queryExecuter.selectFrom(table,
-                        queryParams.filters, queryParams.select, queryParams.order, singular, format,
-                        getRoleFromCookieOrHeader(secret, request));
-                if(result1.isRight()){
-                    if(format == Structure.Format.JSON)
-                        response.type("application/json");
-                    else if(format == Structure.Format.CSV)
-                        response.type("text/csv");
-                    else if(format == Structure.Format.XLSX){
-                        response.header("Content-Disposition", "attachment");
-                        response.type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            String table = request.params(":table");
+            Structure.Format format = accept.map(x -> Structure.toFormat(x)).orElse(Structure.Format.JSON);
+
+            if(format == Structure.Format.OTHER){
+              response.status(406);
+              return null;
+            } else {
+              response.type(Structure.toMediaType(format));
+              if(!resource.isPresent()){
+                  Either<Object, Object> result = queryExecuter.selectFrom(table,
+                          queryParams.filters, queryParams.select, queryParams.order, singular, format,
+                          getRoleFromCookieOrHeader(secret, request));
+                  if(result.isRight()){
+                      if(format == Structure.Format.XLSX){
+                          response.header("Content-Disposition", "attachment");
+                          response.status(200);
+                          HttpServletResponse raw = response.raw();
+                          raw.getOutputStream().write((byte[])result.right().value());
+                          raw.getOutputStream().flush();
+                          raw.getOutputStream().close();
+                          return raw;
+                      }
+                      else{
                         response.status(200);
-                        HttpServletResponse raw = response.raw();
-                        raw.getOutputStream().write((byte[])result1.right().value());
-                        raw.getOutputStream().flush();
-                        raw.getOutputStream().close();
-                        return raw;
-                    }
-                    else
-                        response.type("application/octet-stream");
-                    response.status(200);
-                    return result1.right().value().toString();
-                }else{
-                    response.type("application/json");
-                    response.status(400);
-                    return result1.left().value().toString();
-                }
-            }else{
-                Either<Object, Object> result2 = queryExecuter.selectTableMetaData(table,
-                        singular, getRoleFromCookieOrHeader(secret, request));
-                if(result2.isRight()){
-                    response.type("application/json");
-                    response.status(200);
-                    return result2.right().value().toString();
-                }else{
-                    response.type("application/json");
-                    response.status(400);
-                    return result2.left().value().toString();
-                }
+                        return result.right().value().toString();
+                      }
+                  }else{
+                      response.type("application/json");
+                      response.status(400);
+                      return result.left().value().toString();
+                  }
+              }else{
+                  Either<Object, Object> result = queryExecuter.selectTableMetaData(table,
+                          singular, getRoleFromCookieOrHeader(secret, request));
+                  if(result.isRight()){
+                      response.type("application/json");
+                      response.status(200);
+                      return result.right().value().toString();
+                  }else{
+                      response.type("application/json");
+                      response.status(400);
+                      return result.left().value().toString();
+                  }
+              }
             }
         });
 
@@ -168,30 +156,17 @@ public class ApplicationServer {
             Optional<String> contentType = Optional.ofNullable(request.headers("Content-Type"));
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
 
-            Structure.Format format = Structure.Format.JSON;
-            if(contentType.isPresent()){
-              switch(contentType.get()){
-                case "text/csv":
-                  format = Structure.Format.CSV; break;
-                case "application/json":
-                  format = Structure.Format.JSON; break;
-                case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-                  format = Structure.Format.XLSX; break;
-                default:
-                  format = Structure.Format.OTHER; break;
-              }
-            }
+            Structure.Format format = contentType.map(x -> Structure.toFormat(x)).orElse(Structure.Format.JSON);
+
+            response.type(Structure.toMediaType(format));
 
             switch(format){
-              // Must use Structure.Format.JSON without the Structure.Format or we get the compile error:
-              // an enum switch case label must be the unqualified name of an enumeration constant
               case JSON: {
                 Either<String, Map<String, String>> parsedMap = Parser.jsonToMap(request.body());
                 if(parsedMap.isRight()){
                   Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
                           parsedMap.right().value(), getRoleFromCookieOrHeader(secret, request));
                   if(result.isRight()){
-                      response.type("application/json");
                       response.status(200);
                       return result.right().value().toString();
                   }else{
@@ -211,7 +186,6 @@ public class ApplicationServer {
                     Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
                             parsedMap.right().value(), getRoleFromCookieOrHeader(secret, request));
                     if(result.isRight()){
-                        response.type("application/json");
                         response.status(200);
                         return result.right().value().toString();
                     }else{
@@ -231,7 +205,6 @@ public class ApplicationServer {
                         parsedMap.right().value(), getRoleFromCookieOrHeader(secret, request));
                 if(parsedMap.isRight()){
                   if(result.isRight()){
-                      response.type("application/json");
                       response.status(200);
                       return result.right().value().toString();
                   }else{
@@ -298,31 +271,69 @@ public class ApplicationServer {
         Spark.post("/rpc/:routine", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
+            Optional<String> accept = Optional.ofNullable(request.headers("Accept"));
 
-            Either<String, Map<String, String>> parsedMap = Parser.jsonToMap(request.body());
-            if(parsedMap.isRight()){
-              Either<Object, Object> result = queryExecuter.callRoutine(request.params(":routine"),
-                  parsedMap.right().value(), getRoleFromCookieOrHeader(secret, request));
-              if(result.isRight()){
-                  response.type("application/json");
-                  response.status(200);
-                  if(jwtRoutines.contains(request.params(":routine")))
-                      return Jwts.builder()
-                          .setPayload(result.right().value().toString())
-                          .signWith(SignatureAlgorithm.HS256, secret).compact();
-                  else
-                      return result.right().value();
+            Structure.Format format = accept.map(x -> Structure.toFormat(x)).orElse(Structure.Format.JSON);
+            if(format == Structure.Format.OTHER){
+              response.status(406);
+              return null;
+            } else {
+              response.type(Structure.toMediaType(format));
+              Either<String, Map<String, String>> parsedMap = Parser.jsonToMap(request.body());
+              if(parsedMap.isRight()){
+                Either<Object, Object> result = queryExecuter.callRoutine(request.params(":routine"),
+                    parsedMap.right().value(), format, false, getRoleFromCookieOrHeader(secret, request));
+                if(result.isRight()){
+                    if(jwtRoutines.contains(request.params(":routine")))
+                        return Jwts.builder()
+                            .setPayload(result.right().value().toString())
+                            .signWith(SignatureAlgorithm.HS256, secret).compact();
+                    else if(format == Structure.Format.XLSX){
+                        response.header("Content-Disposition", "attachment");
+                        response.status(200);
+                        HttpServletResponse raw = response.raw();
+                        raw.getOutputStream().write((byte[])result.right().value());
+                        raw.getOutputStream().flush();
+                        raw.getOutputStream().close();
+                        return raw;
+                    } else {
+                      response.status(200);
+                      return result.right().value().toString();
+                    }
+                }else{
+                    response.type("application/json");
+                    response.status(400);
+                    return result.left().value().toString();
+                }
               }else{
                   response.type("application/json");
                   response.status(400);
-                  return result.left().value().toString();
+                  return Errors.messageToJson(parsedMap.left().value());
               }
-            }else{
-                response.type("application/json");
-                response.status(400);
-                return Errors.messageToJson(parsedMap.left().value());
             }
         });
+    }
+
+    private static Optional<String> getRoleFromCookieOrHeader(String secret, Request request){
+        Optional<String> authorization = Optional.ofNullable(request.headers("Authorization"));
+        Optional<String> cookie = Optional.ofNullable(request.cookie(COOKIE_NAME));
+        if(cookie.isPresent()){
+            return decodeGetRole(secret, cookie.get());
+        }
+        else if(authorization.isPresent()){
+            Optional<String> bearer = obtainBearer(authorization.get());
+            return decodeGetRole(secret, bearer.get());
+        }
+        else return Optional.empty();
+    }
+
+    private static Optional<String> decodeGetRole(String secret, String jwt){
+        try{
+            Claims claims = Jwts.parser().setSigningKey(secret).parseClaimsJws(jwt).getBody();
+            return Optional.of(claims.get("role").toString());
+        }catch(Exception e){
+            return Optional.empty();
+        }
     }
 
     private static Optional<String> obtainBearer(String s){
@@ -341,26 +352,5 @@ public class ApplicationServer {
         }
     }
 
-    private static Optional<String> decodeGetRole(String secret, String jwt){
-        try{
-            Claims claims = Jwts.parser().setSigningKey(secret).parseClaimsJws(jwt).getBody();
-            return Optional.of(claims.get("role").toString());
-        }catch(Exception e){
-            return Optional.empty();
-        }
-    }
-
-    private static Optional<String> getRoleFromCookieOrHeader(String secret, Request request){
-        Optional<String> authorization = Optional.ofNullable(request.headers("Authorization"));
-        Optional<String> cookie = Optional.ofNullable(request.cookie(COOKIE_NAME));
-        if(cookie.isPresent()){
-            return decodeGetRole(secret, cookie.get());
-        }
-        else if(authorization.isPresent()){
-            Optional<String> bearer = obtainBearer(authorization.get());
-            return decodeGetRole(secret, bearer.get());
-        }
-        else return Optional.empty();
-    }
 }
 

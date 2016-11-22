@@ -29,8 +29,8 @@ public class QueryExecuter{
                 conn.createStatement().execute(String.format("EXEC AS USER='%s'", this.defaultRole));
             String query =
               "SELECT CHARACTER_MAXIMUM_LENGTH AS max_length, COLUMN_DEFAULT AS [default], " +
-              "COLUMN_NAME AS name, DATA_TYPE as type, " +
               "CONVERT(BIT, (CASE WHEN IS_NULLABLE = 'YES' THEN 1 ELSE 0 END)) AS nullable, " +
+              "COLUMN_NAME AS name, DATA_TYPE as type, " +
               "NUMERIC_PRECISION AS precision, NUMERIC_SCALE AS scale " +
               "FROM information_schema.columns WHERE table_name = ? AND table_schema = ?";
             System.out.println(query);
@@ -275,7 +275,10 @@ public class QueryExecuter{
     }
 
     public Either<Object, Object> callRoutine(
-            String funcName, Map<String, String> values,
+            String funcName,
+            Map<String, String> values,
+            Structure.Format format,
+            Boolean singular,
             Optional<String> role
         ){
         try(Connection conn = this.ds.getConnection()){
@@ -299,10 +302,10 @@ public class QueryExecuter{
                         .buildCallableStatement(conn, query, routine, values);
                     if(routine.isFunction()){
                       ResultSet rs = cs.executeQuery();
-                      result = ResultSetConverter.convert(rs, false, Structure.Format.JSON, Optional.of(routine));
+                      result = ResultSetConverter.convert(rs, singular, format, Optional.of(routine));
                     }else{
                       cs.execute();
-                      result = ResultSetConverter.convert(cs, routine);
+                      result = ResultSetConverter.convert(cs, routine, format);
                     }
                 } catch (SQLException e) {
                     result = Either.left(Errors.exceptionToJson(e));

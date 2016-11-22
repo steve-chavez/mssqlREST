@@ -8,6 +8,36 @@ public class Structure{
         JSON, CSV, XLSX, BINARY, OTHER;
     }
 
+    public static Format toFormat(String val){
+      switch(val){
+        case "application/json":
+          return Format.JSON;
+        case "text/csv":
+          return Format.CSV;
+        case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+          return Format.XLSX;
+        case "application/octet-stream":
+          return Format.BINARY;
+        default:
+          return Format.OTHER;
+      }
+    }
+
+    public static String toMediaType(Format format){
+      switch(format){
+        case JSON:
+          return "application/json";
+        case CSV:
+          return "text/csv";
+        case XLSX:
+          return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        case BINARY:
+          return "application/octet-stream";
+        default:
+          return null; //TODO: OTHER Shouldn't be reachable
+      }
+    }
+
     public static class Table{
 
         public String schema;
