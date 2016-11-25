@@ -18,7 +18,7 @@ import com.ebay.xcelite.reader.*;
 import com.ebay.xcelite.writer.*;
 import com.ebay.xcelite.*;
 
-public class Parser{
+public class Parsers{
 
   static final Gson gson = new GsonBuilder().disableHtmlEscaping().serializeNulls().create();
 

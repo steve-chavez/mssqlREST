@@ -5,7 +5,7 @@ import java.util.*;
 public class Structure{
 
     public enum Format{
-        JSON, CSV, XLSX, BINARY, OTHER;
+        JSON, CSV, XLSX, BINARY;
     }
 
     public static Format toFormat(String val){
@@ -18,8 +18,8 @@ public class Structure{
           return Format.XLSX;
         case "application/octet-stream":
           return Format.BINARY;
-        default:
-          return Format.OTHER;
+        default: //assume JSON for all other types. TODO correct this
+          return Format.JSON;
       }
     }
 
@@ -34,7 +34,7 @@ public class Structure{
         case BINARY:
           return "application/octet-stream";
         default:
-          return null; //TODO: OTHER Shouldn't be reachable
+          return "application/json";
       }
     }
 

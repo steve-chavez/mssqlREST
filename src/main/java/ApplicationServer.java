@@ -98,7 +98,7 @@ public class ApplicationServer {
         Spark.get("/:table", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
 
-            Parser.QueryParams queryParams = new Parser.QueryParams(request.queryMap().toMap());
+            Parsers.QueryParams queryParams = new Parsers.QueryParams(request.queryMap().toMap());
 
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
             Optional<String> plurality = Optional.ofNullable(request.headers("Plurality"));
@@ -108,47 +108,43 @@ public class ApplicationServer {
             String table = request.params(":table");
             Structure.Format format = accept.map(x -> Structure.toFormat(x)).orElse(Structure.Format.JSON);
 
-            if(format == Structure.Format.OTHER){
-              response.status(406);
-              return null;
-            } else {
-              response.type(Structure.toMediaType(format));
-              if(!resource.isPresent()){
-                  Either<Object, Object> result = queryExecuter.selectFrom(table,
-                          queryParams.filters, queryParams.select, queryParams.order, singular, format,
-                          getRole(secret, request, defaultRole));
-                  if(result.isRight()){
-                      if(format == Structure.Format.XLSX){
-                          response.header("Content-Disposition", "attachment");
-                          response.status(200);
-                          HttpServletResponse raw = response.raw();
-                          raw.getOutputStream().write((byte[])result.right().value());
-                          raw.getOutputStream().flush();
-                          raw.getOutputStream().close();
-                          return raw;
-                      }
-                      else{
+            response.type(Structure.toMediaType(format));
+
+            if(!resource.isPresent()){
+                Either<Object, Object> result = queryExecuter.selectFrom(table,
+                        queryParams.filters, queryParams.select, queryParams.order, singular, format,
+                        getRole(secret, request, defaultRole));
+                if(result.isRight()){
+                    if(format == Structure.Format.XLSX){
+                        response.header("Content-Disposition", "attachment");
                         response.status(200);
-                        return result.right().value().toString();
-                      }
-                  }else{
-                      response.type("application/json");
-                      response.status(400);
-                      return result.left().value().toString();
-                  }
-              }else{
-                  Either<Object, Object> result = queryExecuter.selectTableMetaData(table,
-                          singular, getRole(secret, request, defaultRole));
-                  if(result.isRight()){
-                      response.type("application/json");
+                        HttpServletResponse raw = response.raw();
+                        raw.getOutputStream().write((byte[])result.right().value());
+                        raw.getOutputStream().flush();
+                        raw.getOutputStream().close();
+                        return raw;
+                    }
+                    else{
                       response.status(200);
                       return result.right().value().toString();
-                  }else{
-                      response.type("application/json");
-                      response.status(400);
-                      return result.left().value().toString();
-                  }
-              }
+                    }
+                }else{
+                    response.type("application/json");
+                    response.status(400);
+                    return result.left().value().toString();
+                }
+            }else{
+                Either<Object, Object> result = queryExecuter.selectTableMetaData(table,
+                        singular, getRole(secret, request, defaultRole));
+                if(result.isRight()){
+                    response.type("application/json");
+                    response.status(200);
+                    return result.right().value().toString();
+                }else{
+                    response.type("application/json");
+                    response.status(400);
+                    return result.left().value().toString();
+                }
             }
         });
 
@@ -164,7 +160,7 @@ public class ApplicationServer {
 
             switch(format){
               case JSON: {
-                Either<String, Map<String, String>> parsedMap = Parser.jsonToMap(request.body());
+                Either<String, Map<String, String>> parsedMap = Parsers.jsonToMap(request.body());
                 if(parsedMap.isRight()){
                   Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
                           parsedMap.right().value(), getRole(secret, request, defaultRole));
@@ -183,7 +179,7 @@ public class ApplicationServer {
                 }
               }
               case CSV: {
-                Either<String, List<Map<String, String>>> parsedMap = Parser.csvToMap(request.body());
+                Either<String, List<Map<String, String>>> parsedMap = Parsers.csvToMap(request.body());
                 if(parsedMap.isRight()){
                     Either<Object, Object> result = queryExecuter.batchInsertInto(request.params(":table"),
                             parsedMap.right().value(), getRole(secret, request, defaultRole));
@@ -202,7 +198,7 @@ public class ApplicationServer {
                 }
               }
               case XLSX: {
-                Either<String, List<Map<String, String>>> parsedMap = Parser.xlsxToMap(request.raw());
+                Either<String, List<Map<String, String>>> parsedMap = Parsers.xlsxToMap(request.raw());
                 Either<Object, Object> result = queryExecuter.batchInsertInto(request.params(":table"),
                         parsedMap.right().value(), getRole(secret, request, defaultRole));
                 if(parsedMap.isRight()){
@@ -220,9 +216,9 @@ public class ApplicationServer {
                   return Errors.messageToJson(parsedMap.left().value());
                 }
               }
-              default:
-                response.status(406);
-                return null;
+              default: {
+                return "";
+              }
             }
         });
 
@@ -230,9 +226,9 @@ public class ApplicationServer {
             System.out.println(request.requestMethod() + " : " + request.url());
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
 
-            Either<String, Map<String, String>> parsedMap = Parser.jsonToMap(request.body());
+            Either<String, Map<String, String>> parsedMap = Parsers.jsonToMap(request.body());
             if(parsedMap.isRight()){
-              Parser.QueryParams queryParams = new Parser.QueryParams(request.queryMap().toMap());
+              Parsers.QueryParams queryParams = new Parsers.QueryParams(request.queryMap().toMap());
               Either<Object, Object> result = queryExecuter.updateSet(request.params(":table"),
                       parsedMap.right().value(), queryParams.filters, getRole(secret, request, defaultRole));
               if(result.isRight()){
@@ -256,7 +252,7 @@ public class ApplicationServer {
             System.out.println(request.requestMethod() + " : " + request.url());
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
 
-            Parser.QueryParams queryParams = new Parser.QueryParams(request.queryMap().toMap());
+            Parsers.QueryParams queryParams = new Parsers.QueryParams(request.queryMap().toMap());
             Either<Object, Object> result = queryExecuter.deleteFrom(request.params(":table"),
                     queryParams.filters, getRole(secret, request, defaultRole));
             if(result.isRight()){
@@ -276,42 +272,39 @@ public class ApplicationServer {
             Optional<String> accept = Optional.ofNullable(request.headers("Accept"));
 
             Structure.Format format = accept.map(x -> Structure.toFormat(x)).orElse(Structure.Format.JSON);
-            if(format == Structure.Format.OTHER){
-              response.status(406);
-              return null;
-            } else {
-              response.type(Structure.toMediaType(format));
-              Either<String, Map<String, String>> parsedMap = Parser.jsonToMap(request.body());
-              if(parsedMap.isRight()){
-                Either<Object, Object> result = queryExecuter.callRoutine(request.params(":routine"),
-                    parsedMap.right().value(), format, false, getRole(secret, request, defaultRole));
-                if(result.isRight()){
-                    if(jwtRoutines.contains(request.params(":routine")))
-                        return Jwts.builder()
-                            .setPayload(result.right().value().toString())
-                            .signWith(SignatureAlgorithm.HS256, secret).compact();
-                    else if(format == Structure.Format.XLSX){
-                        response.header("Content-Disposition", "attachment");
-                        response.status(200);
-                        HttpServletResponse raw = response.raw();
-                        raw.getOutputStream().write((byte[])result.right().value());
-                        raw.getOutputStream().flush();
-                        raw.getOutputStream().close();
-                        return raw;
-                    } else {
+
+            response.type(Structure.toMediaType(format));
+
+            Either<String, Map<String, String>> parsedMap = Parsers.jsonToMap(request.body());
+            if(parsedMap.isRight()){
+              Either<Object, Object> result = queryExecuter.callRoutine(request.params(":routine"),
+                  parsedMap.right().value(), format, false, getRole(secret, request, defaultRole));
+              if(result.isRight()){
+                  if(jwtRoutines.contains(request.params(":routine")))
+                      return Jwts.builder()
+                          .setPayload(result.right().value().toString())
+                          .signWith(SignatureAlgorithm.HS256, secret).compact();
+                  else if(format == Structure.Format.XLSX){
+                      response.header("Content-Disposition", "attachment");
                       response.status(200);
-                      return result.right().value().toString();
-                    }
-                }else{
-                    response.type("application/json");
-                    response.status(400);
-                    return result.left().value().toString();
-                }
+                      HttpServletResponse raw = response.raw();
+                      raw.getOutputStream().write((byte[])result.right().value());
+                      raw.getOutputStream().flush();
+                      raw.getOutputStream().close();
+                      return raw;
+                  } else {
+                    response.status(200);
+                    return result.right().value().toString();
+                  }
               }else{
                   response.type("application/json");
                   response.status(400);
-                  return Errors.messageToJson(parsedMap.left().value());
+                  return result.left().value().toString();
               }
+            }else{
+                response.type("application/json");
+                response.status(400);
+                return Errors.messageToJson(parsedMap.left().value());
             }
         });
     }
