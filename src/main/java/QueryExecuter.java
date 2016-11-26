@@ -78,8 +78,8 @@ public class QueryExecuter{
 
     public Either<Object, Object> selectFrom(
             String tableName, Map<String, String> queryParams,
-            Optional<String> selectColumns,
-            Optional<String> order,
+            List<String> select,
+            List<Structure.Order> order,
             Boolean singular,
             Structure.Format format,
             String role){
@@ -95,7 +95,7 @@ public class QueryExecuter{
                 Structure.Table table = optionalTable.get();
                 String query = QueryBuilder.selectQuery(table,
                         queryParams.keySet(),
-                        selectColumns,
+                        select,
                         order);
                 System.out.println(query);
                 Either<Object, Object> result;

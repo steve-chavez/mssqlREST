@@ -22,7 +22,8 @@ dependencies {
        "com.univocity:univocity-parsers:1.0.0",
        "io.jsonwebtoken:jjwt:0.6.0",
        "com.github.steve-chavez:xcelite:master-SNAPSHOT",
-       "io.fastjson:boon:0.11"
+       "io.fastjson:boon:0.11",
+       'org.javafp:parsecj:0.2'
    )
    testCompile (
        'junit:junit:4.12',

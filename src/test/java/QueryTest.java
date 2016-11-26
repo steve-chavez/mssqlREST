@@ -72,6 +72,18 @@ public class QueryTest {
           expect(res.body()).toEqual("[{\"id\":1},{\"id\":2},{\"id\":3},{\"id\":4},{\"id\":5}]");
           expect(res.code()).toEqual(200);
         });
+
+        it("should ?select columns", () -> {
+          HttpResp res =  HTTP.get("http://localhost:9090/projects?select=id").execute();
+          expect(res.body()).toEqual("[{\"id\":1},{\"id\":2},{\"id\":3},{\"id\":4}]");
+          expect(res.code()).toEqual(200);
+        });
+
+        it("should ?order columns", () -> {
+          HttpResp res =  HTTP.get("http://localhost:9090/projects?select=id&order=id.desc").execute();
+          expect(res.body()).toEqual("[{\"id\":4},{\"id\":3},{\"id\":2},{\"id\":1}]");
+          expect(res.code()).toEqual(200);
+        });
       });
     });
 

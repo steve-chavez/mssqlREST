@@ -15,9 +15,14 @@ import fj.data.Either;
 import java.io.*;
 import java.nio.file.*;
 
+import org.javafp.parsecj.*;
+import org.javafp.data.*;
+import static org.javafp.parsecj.Combinators.*;
+import static org.javafp.parsecj.Text.*;
+
 public class ApplicationServer {
 
-    static final String COOKIE_NAME = "x-rest-jwt";
+   static final String COOKIE_NAME = "x-rest-jwt";
 
     public static void main(String[] args){
 
@@ -98,7 +103,7 @@ public class ApplicationServer {
         Spark.get("/:table", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
 
-            Parsers.QueryParams queryParams = new Parsers.QueryParams(request.queryMap().toMap());
+            Parsers.QueryParams queryParams = new Parsers.QueryParams(request.queryMap());
 
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
             Optional<String> plurality = Optional.ofNullable(request.headers("Plurality"));
@@ -110,9 +115,13 @@ public class ApplicationServer {
 
             response.type(Structure.toMediaType(format));
 
-            if(!resource.isPresent()){
+            if(queryParams.select.isLeft() || queryParams.order.isLeft()){
+              response.type("application/json");
+              response.status(400);
+              return queryParams.select.isLeft()?queryParams.select.left().value():queryParams.order.left().value();
+            }else if(!resource.isPresent()){
                 Either<Object, Object> result = queryExecuter.selectFrom(table,
-                        queryParams.filters, queryParams.select, queryParams.order, singular, format,
+                        queryParams.filters, queryParams.select.right().value(), queryParams.order.right().value(), singular, format,
                         getRole(secret, request, defaultRole));
                 if(result.isRight()){
                     if(format == Structure.Format.XLSX){
@@ -228,7 +237,7 @@ public class ApplicationServer {
 
             Either<String, Map<String, String>> parsedMap = Parsers.jsonToMap(request.body());
             if(parsedMap.isRight()){
-              Parsers.QueryParams queryParams = new Parsers.QueryParams(request.queryMap().toMap());
+              Parsers.QueryParams queryParams = new Parsers.QueryParams(request.queryMap());
               Either<Object, Object> result = queryExecuter.updateSet(request.params(":table"),
                       parsedMap.right().value(), queryParams.filters, getRole(secret, request, defaultRole));
               if(result.isRight()){
@@ -252,7 +261,7 @@ public class ApplicationServer {
             System.out.println(request.requestMethod() + " : " + request.url());
             Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
 
-            Parsers.QueryParams queryParams = new Parsers.QueryParams(request.queryMap().toMap());
+            Parsers.QueryParams queryParams = new Parsers.QueryParams(request.queryMap());
             Either<Object, Object> result = queryExecuter.deleteFrom(request.params(":table"),
                     queryParams.filters, getRole(secret, request, defaultRole));
             if(result.isRight()){

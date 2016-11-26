@@ -18,6 +18,13 @@ import com.ebay.xcelite.reader.*;
 import com.ebay.xcelite.writer.*;
 import com.ebay.xcelite.*;
 
+import org.javafp.parsecj.*;
+import org.javafp.data.*;
+import static org.javafp.parsecj.Combinators.*;
+import static org.javafp.parsecj.Text.*;
+
+import spark.QueryParamsMap;
+
 public class Parsers{
 
   static final Gson gson = new GsonBuilder().disableHtmlEscaping().serializeNulls().create();
@@ -91,41 +98,49 @@ public class Parsers{
 
   public static class QueryParams{
 
-      public Optional<String> select;
-      public Optional<String> order;
+      public Either<String, List<String>> select;
+      public Either<String, List<Structure.Order>> order;
       public Map<String, String> filters;
 
-      public QueryParams(Map<String, String[]> map){
-          Map<String, String> normalized = normalizeMap(map);
-          this.select  = parseSelect(normalized);
-          this.order   = parseOrder(normalized);
-          this.filters = parseFilters(normalized);
+      private final Parser<Character, String> identifier = regex("[a-zA-Z0-9_]*");
+
+      private final Parser<Character, IList<String>> selectP = identifier.sepBy(chr(','));
+
+      private final Parser<Character, Optional<Structure.Order.Direction>> orderDirP =
+        optionalOpt(choice(
+          attempt(string(".asc").then(retn(Structure.Order.Direction.ASC))),
+          attempt(string(".desc").then(retn(Structure.Order.Direction.DESC)))));
+
+      private final Parser<Character, Structure.Order> orderItemP = identifier.bind(item -> orderDirP.bind(dir -> retn(new Structure.Order(item, dir))));
+      private final Parser<Character, IList<Structure.Order>> orderP = orderItemP.sepBy1(chr(','));
+
+      public QueryParams(QueryParamsMap map){
+        Map<String, String> normalized = normalizeMap(map.toMap());
+        this.select  = parseSelect(Optional.ofNullable(normalized.get("select")));
+        this.order   = parseOrder(Optional.ofNullable(normalized.get("order")));
+        this.filters = parseFilters(normalized);
       }
 
-      //Spark gets an array of query param values. I guess because they consider this valid:
-      //`/table?select=val1&select=val2` and they get an array of `select` values.
-      //Just take the first value here.
-      private Map<String, String> normalizeMap(Map<String, String[]> map){
-          return map.entrySet().stream().collect(
-                  Collectors.toMap(
-                      Map.Entry::getKey, e -> e.getValue()[0]
-          ));
+      private Either<String, List<String>> parseSelect(Optional<String> val){
+        if(val.isPresent())
+          try{
+            return Either.right(IList.toList(selectP.parse(State.of(val.get())).getResult()));
+          }catch(Exception e){
+            return Either.left(Errors.messageToJson(e.toString()));
+          }
+        else
+          return Either.right(Collections.emptyList());
       }
 
-      private Optional<String> parseSelect(Map<String, String> map){
-        String optSelect = map.entrySet().stream()
-            .filter( x -> x.getKey().equalsIgnoreCase("select"))
-            .map( x -> x.getValue())
-            .collect(Collectors.joining());
-        return optSelect.isEmpty()?Optional.empty():Optional.of(optSelect);
-      }
-
-      private Optional<String> parseOrder(Map<String, String> map){
-        String optOrder = map.entrySet().stream()
-            .filter( x -> x.getKey().equalsIgnoreCase("order"))
-            .map( x -> x.getValue())
-            .collect(Collectors.joining());
-        return optOrder.isEmpty()?Optional.empty():Optional.of(optOrder);
+      private Either<String, List<Structure.Order>> parseOrder(Optional<String> val){
+        if(val.isPresent())
+          try{
+            return Either.right(IList.toList(orderP.parse(State.of(val.get())).getResult()));
+          }catch(Exception e){
+            return Either.left(Errors.messageToJson(e.toString()));
+          }
+        else
+          return Either.right(Collections.emptyList());
       }
 
       private Map<String, String> parseFilters(Map<String, String> map){
@@ -134,6 +149,16 @@ public class Parsers{
                           !x.getKey().equalsIgnoreCase("select"))
             .collect(Collectors.toMap( x -> x.getKey(), x -> x.getValue()));
         return mapWithout;
+      }
+
+      //Spark gets an array of query param values. This is because they consider this valid:
+      //`/table?select=val1&select=val2` and they get an array of `select` values.
+      //Just take the first value here.
+      private Map<String, String> normalizeMap(Map<String, String[]> map){
+          return map.entrySet().stream().collect(
+                  Collectors.toMap(
+                      Map.Entry::getKey, e -> e.getValue()[0]
+          ));
       }
   }
 

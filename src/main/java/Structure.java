@@ -4,42 +4,7 @@ import java.util.*;
 
 public class Structure{
 
-    public enum Format{
-        JSON, CSV, XLSX, BINARY;
-    }
-
-    public static Format toFormat(String val){
-      switch(val){
-        case "application/json":
-          return Format.JSON;
-        case "text/csv":
-          return Format.CSV;
-        case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
-          return Format.XLSX;
-        case "application/octet-stream":
-          return Format.BINARY;
-        default: //assume JSON for all other types. TODO correct this
-          return Format.JSON;
-      }
-    }
-
-    public static String toMediaType(Format format){
-      switch(format){
-        case JSON:
-          return "application/json";
-        case CSV:
-          return "text/csv";
-        case XLSX:
-          return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-        case BINARY:
-          return "application/octet-stream";
-        default:
-          return "application/json";
-      }
-    }
-
     public static class Table{
-
         public String schema;
         public String name;
         public Map<String, String> columns = new HashMap<String, String>();
@@ -195,5 +160,55 @@ public class Structure{
 
         default:          return java.sql.Types.OTHER;
       }
+    }
+
+    public enum Format{
+        JSON, CSV, XLSX, BINARY;
+    }
+
+    public static Format toFormat(String val){
+      switch(val){
+        case "application/json":
+          return Format.JSON;
+        case "text/csv":
+          return Format.CSV;
+        case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+          return Format.XLSX;
+        case "application/octet-stream":
+          return Format.BINARY;
+        default: //assume JSON for all other types. TODO correct this
+          return Format.JSON;
+      }
+    }
+
+    public static String toMediaType(Format format){
+      switch(format){
+        case JSON:
+          return "application/json";
+        case CSV:
+          return "text/csv";
+        case XLSX:
+          return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        case BINARY:
+          return "application/octet-stream";
+        default:
+          return "application/json";
+      }
+    }
+
+    public static class Order{
+
+      public enum Direction{
+        ASC, DESC;
+      }
+
+      public String identifier;
+      public Optional<Direction> dir;
+
+      public Order(String identifier, Optional<Direction> dir){
+        this.identifier = identifier;
+        this.dir = dir;
+      }
+
     }
 }

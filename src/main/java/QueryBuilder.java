@@ -7,26 +7,28 @@ public class QueryBuilder{
     public static String selectQuery(
             Structure.Table table,
             Set<String> params,
-            Optional<String> selectColumns,
-            Optional<String> order
+            List<String> select,
+            List<Structure.Order> order
         ){
         StringBuilder builder = new StringBuilder("SELECT ");
 
-        if(selectColumns.isPresent()){
-            builder.append(selectColumns.get());
+        if(select.isEmpty()){
+            builder.append("*");
         }
         else
-            builder.append("*");
+            builder.append(select.stream().map(s -> quoteName(s)).collect(Collectors.joining(", ")));
 
         builder.append(" FROM " + quoteName(table.schema) + "." + quoteName(table.name) + " ");
 
         if(!params.isEmpty()){
             builder.append(" WHERE ");
-            builder.append(params.stream().map( p -> quoteName(p) + " = ?").collect(Collectors.joining(" AND ")));
+            builder.append(params.stream().map(p -> quoteName(p) + " = ?").collect(Collectors.joining(" AND ")));
         }
 
-        if(order.isPresent())
-            builder.append(" ORDER BY " + order.get());
+        if(!order.isEmpty()){
+            builder.append(" ORDER BY ");
+            builder.append(order.stream().map(o -> quoteName(o.identifier) + o.dir.map(d -> " " + d).orElse("")).collect(Collectors.joining(", ")));
+        }
 
         return builder.toString();
     }
