@@ -7,7 +7,22 @@ import java.nio.charset.*;
 
 public class StatementBuilder{
 
-    public static PreparedStatement buildPreparedStatement(
+    public static PreparedStatement buildSelectPreparedStatement(
+            Connection conn,
+            String query,
+            Structure.Table table,
+            Map<String, Structure.OperatorVal> filters
+    ) throws SQLException{
+        PreparedStatement statement = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+        Integer i = 1;
+        for (Map.Entry<String, Structure.OperatorVal> entry : filters.entrySet()) {
+          setValue(statement, i, Structure.toSqlType(table.columns.get(entry.getKey())), entry.getValue().val);
+          i++;
+        }
+        return statement;
+    }
+
+    public static PreparedStatement buildInsertPreparedStatement(
             Connection conn,
             String query,
             Structure.Table table,
@@ -40,12 +55,12 @@ public class StatementBuilder{
         return statement;
     }
 
-    public static PreparedStatement buildPreparedStatement(
+    public static PreparedStatement buildUpdatePreparedStatement(
             Connection conn,
             String query,
             Structure.Table table,
             Map<String, String> values,
-            Map<String, String> queryParams
+            Map<String, Structure.OperatorVal> filters
     ) throws SQLException{
         PreparedStatement statement = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         Integer i = 1;
@@ -53,8 +68,8 @@ public class StatementBuilder{
             setValue(statement, i, Structure.toSqlType(table.columns.get(entry.getKey())), entry.getValue());
             i++;
         }
-        for (Map.Entry<String, String> entry : queryParams.entrySet()) {
-            setValue(statement, i, Structure.toSqlType(entry.getKey()), entry.getValue());
+        for (Map.Entry<String, Structure.OperatorVal> entry : filters.entrySet()) {
+            setValue(statement, i, Structure.toSqlType(entry.getKey()), entry.getValue().val);
             i++;
         }
         return statement;

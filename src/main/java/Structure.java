@@ -196,19 +196,38 @@ public class Structure{
       }
     }
 
+    public enum OrderDirection{
+      ASC, DESC;
+    }
+
     public static class Order{
 
-      public enum Direction{
-        ASC, DESC;
-      }
-
       public String identifier;
-      public Optional<Direction> dir;
+      public Optional<OrderDirection> dir;
 
-      public Order(String identifier, Optional<Direction> dir){
+      public Order(String identifier, Optional<OrderDirection> dir){
         this.identifier = identifier;
         this.dir = dir;
       }
+    }
 
+    public enum Operator{
+      EQ("="), NEQ("<>"), GT(">"), GTE(">="), LT("<"), LTE("<="), LIKE("LIKE");
+
+      public final String literal;
+
+      private Operator(String literal){
+        this.literal = literal;
+      }
+    }
+
+    public static class OperatorVal{
+      public Operator op;
+      public String val;
+
+      public OperatorVal(Operator op, String val){
+        this.op = op;
+        this.val = val;
+      }
     }
 }

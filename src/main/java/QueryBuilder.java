@@ -6,7 +6,7 @@ public class QueryBuilder{
 
     public static String selectQuery(
             Structure.Table table,
-            Set<String> params,
+            Map<String, Structure.OperatorVal> filters,
             List<String> select,
             List<Structure.Order> order
         ){
@@ -20,10 +20,7 @@ public class QueryBuilder{
 
         builder.append(" FROM " + quoteName(table.schema) + "." + quoteName(table.name) + " ");
 
-        if(!params.isEmpty()){
-            builder.append(" WHERE ");
-            builder.append(params.stream().map(p -> quoteName(p) + " = ?").collect(Collectors.joining(" AND ")));
-        }
+        builder.append(whereFragment(filters));
 
         if(!order.isEmpty()){
             builder.append(" ORDER BY ");
@@ -52,32 +49,24 @@ public class QueryBuilder{
     public static String updateQuery(
             Structure.Table table,
             Set<String> vals,
-            Set<String> params
+            Map<String, Structure.OperatorVal> filters
     ){
         StringBuilder builder = new StringBuilder("UPDATE ");
         builder.append(quoteName(table.schema) + "." + quoteName(table.name) + " ");
         builder.append("SET ");
         builder.append(vals.stream().map(v -> quoteName(v) + " = ?").collect(Collectors.joining(", ")));
-
-        if(!params.isEmpty()){
-            builder.append(" WHERE ");
-            builder.append(params.stream().map(p -> quoteName(p) + " = ?").collect(Collectors.joining(" AND ")));
-        }
+        builder.append(whereFragment(filters));
 
         return builder.toString();
     }
 
     public static String deleteQuery(
             Structure.Table table,
-            Set<String> params
+            Map<String, Structure.OperatorVal> filters
     ){
         StringBuilder builder = new StringBuilder("DELETE FROM ");
         builder.append(quoteName(table.schema) + "." + quoteName(table.name) + " ");
-
-        if(!params.isEmpty()){
-            builder.append(" WHERE ");
-            builder.append(params.stream().map( p -> quoteName(p) + " = ?").collect(Collectors.joining(" AND ")));
-        }
+        builder.append(whereFragment(filters));
 
         return builder.toString();
     }
@@ -105,6 +94,14 @@ public class QueryBuilder{
             builder.append(")}");
         }
         return builder.toString();
+    }
+
+    private static String whereFragment(Map<String, Structure.OperatorVal> filters){
+      if(!filters.isEmpty())
+        return " WHERE " + filters.entrySet().stream().map(e ->
+            quoteName(e.getKey()) + " " + e.getValue().op.literal + " ?").collect(Collectors.joining(" AND "));
+      else
+        return "";
     }
 
     //Does the same as `select quotename('something')`

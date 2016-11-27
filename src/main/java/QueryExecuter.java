@@ -77,7 +77,7 @@ public class QueryExecuter{
     }
 
     public Either<Object, Object> selectFrom(
-            String tableName, Map<String, String> queryParams,
+            String tableName, Map<String, Structure.OperatorVal> filters,
             List<String> select,
             List<Structure.Order> order,
             Boolean singular,
@@ -94,13 +94,13 @@ public class QueryExecuter{
             }else{
                 Structure.Table table = optionalTable.get();
                 String query = QueryBuilder.selectQuery(table,
-                        queryParams.keySet(),
+                        filters,
                         select,
                         order);
                 System.out.println(query);
                 Either<Object, Object> result;
                 try{
-                    PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, queryParams);
+                    PreparedStatement statement = StatementBuilder.buildSelectPreparedStatement(conn, query, table, filters);
                     ResultSet rs = statement.executeQuery();
                     result = ResultSetConverter.convert(rs, singular, format, Optional.empty());
                 }catch(SQLException e){
@@ -130,7 +130,7 @@ public class QueryExecuter{
                 System.out.println(query);
                 Either<Object, Object> result;
                 try{
-                    PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, values);
+                    PreparedStatement statement = StatementBuilder.buildInsertPreparedStatement(conn, query, table, values);
                     statement.executeUpdate();
                     ResultSet rs = statement.getGeneratedKeys();
                     Integer id = 0;
@@ -180,7 +180,7 @@ public class QueryExecuter{
         }
     }
 
-    public Either<Object, Object> updateSet(String tableName, Map<String, String> values, Map<String, String> queryParams, String role){
+    public Either<Object, Object> updateSet(String tableName, Map<String, String> values, Map<String, Structure.OperatorVal> filters, String role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", role));
@@ -191,11 +191,11 @@ public class QueryExecuter{
                 return Either.left(Errors.missingError());
             }else{
                 Structure.Table table = optionalTable.get();
-                String query = QueryBuilder.updateQuery(table, values.keySet(), queryParams.keySet());
+                String query = QueryBuilder.updateQuery(table, values.keySet(), filters);
                 System.out.println(query);
                 Either<Object, Object> result;
                 try{
-                    PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, values, queryParams);
+                    PreparedStatement statement = StatementBuilder.buildUpdatePreparedStatement(conn, query, table, values, filters);
                     statement.executeUpdate();
                     result = Either.right("");
                 } catch (SQLException e) {
@@ -210,7 +210,7 @@ public class QueryExecuter{
         }
     }
 
-    public Either<Object, Object> deleteFrom(String tableName, Map<String, String> queryParams, String role){
+    public Either<Object, Object> deleteFrom(String tableName, Map<String, Structure.OperatorVal> filters, String role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", role));
@@ -221,11 +221,11 @@ public class QueryExecuter{
                 return Either.left(Errors.missingError());
             }else{
                 Structure.Table table = optionalTable.get();
-                String query = QueryBuilder.deleteQuery(table, queryParams.keySet());
+                String query = QueryBuilder.deleteQuery(table, filters);
                 System.out.println(query);
                 Either<Object, Object> result;
                 try{
-                    PreparedStatement statement = StatementBuilder.buildPreparedStatement(conn, query, table, queryParams);
+                    PreparedStatement statement = StatementBuilder.buildSelectPreparedStatement(conn, query, table, filters);
                     statement.executeUpdate();
                     result = Either.right("");
                 } catch (SQLException e) {

@@ -100,19 +100,31 @@ public class Parsers{
 
       public Either<String, List<String>> select;
       public Either<String, List<Structure.Order>> order;
-      public Map<String, String> filters;
+      public Either<String, Map<String, Structure.OperatorVal>> filters;
+
+      private final Parser<Character, String> any = regex(".*");
 
       private final Parser<Character, String> identifier = regex("[a-zA-Z0-9_]*");
 
       private final Parser<Character, IList<String>> selectP = identifier.sepBy(chr(','));
 
-      private final Parser<Character, Optional<Structure.Order.Direction>> orderDirP =
+      private final Parser<Character, Optional<Structure.OrderDirection>> orderDirP =
         optionalOpt(choice(
-          attempt(string(".asc").then(retn(Structure.Order.Direction.ASC))),
-          attempt(string(".desc").then(retn(Structure.Order.Direction.DESC)))));
-
+          attempt(string(".asc").then(retn(Structure.OrderDirection.ASC))),
+          attempt(string(".desc").then(retn(Structure.OrderDirection.DESC)))));
       private final Parser<Character, Structure.Order> orderItemP = identifier.bind(item -> orderDirP.bind(dir -> retn(new Structure.Order(item, dir))));
       private final Parser<Character, IList<Structure.Order>> orderP = orderItemP.sepBy1(chr(','));
+
+      private final Parser<Character, Structure.Operator> operator =
+        choice(
+          attempt(string("eq.").then(retn(Structure.Operator.EQ))),
+          attempt(string("gt.").then(retn(Structure.Operator.GT))),
+          attempt(string("gte.").then(retn(Structure.Operator.GTE))),
+          attempt(string("lt.").then(retn(Structure.Operator.LT))),
+          attempt(string("lte.").then(retn(Structure.Operator.LTE))),
+          attempt(string("neq.").then(retn(Structure.Operator.NEQ))),
+          attempt(string("like.").then(retn(Structure.Operator.LIKE))));
+      private final Parser<Character, Structure.OperatorVal> operatorVal = operator.bind(op -> any.bind(val -> retn(new Structure.OperatorVal(op, val))));
 
       public QueryParams(QueryParamsMap map){
         Map<String, String> normalized = normalizeMap(map.toMap());
@@ -143,12 +155,19 @@ public class Parsers{
           return Either.right(Collections.emptyList());
       }
 
-      private Map<String, String> parseFilters(Map<String, String> map){
-        Map<String, String> mapWithout = map.entrySet().stream()
+      private Either<String, Map<String, Structure.OperatorVal>> parseFilters(Map<String, String> map){
+        Map<String, String> filtersMap = map.entrySet().stream()
             .filter( x -> !x.getKey().equalsIgnoreCase("order")&&
                           !x.getKey().equalsIgnoreCase("select"))
             .collect(Collectors.toMap( x -> x.getKey(), x -> x.getValue()));
-        return mapWithout;
+        Map<String, Structure.OperatorVal> result = new HashMap();
+        try{
+          for(Map.Entry<String, String> entry : filtersMap.entrySet())
+            result.put(entry.getKey(), operatorVal.parse(State.of(entry.getValue())).getResult());
+          return Either.right(result);
+        }catch(Exception e){
+          return Either.left(Errors.messageToJson(e.toString()));
+        }
       }
 
       //Spark gets an array of query param values. This is because they consider this valid:

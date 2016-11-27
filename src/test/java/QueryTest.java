@@ -85,6 +85,51 @@ public class QueryTest {
           expect(res.code()).toEqual(200);
         });
       });
+      describe("With filtering", () -> {
+        it("should filter with eq", () -> {
+          HttpResp res =  HTTP.get("http://localhost:9090/items?id=eq.1").execute();
+          expect(res.body()).toEqual("[{\"id\":1}]");
+          expect(res.code()).toEqual(200);
+        });
+
+        it("should filter with neq", () -> {
+          HttpResp res =  HTTP.get("http://localhost:9090/items?id=neq.1").execute();
+          expect(res.body()).toEqual("[{\"id\":2},{\"id\":3},{\"id\":4},{\"id\":5}]");
+          expect(res.code()).toEqual(200);
+        });
+
+        it("should filter with gt", () -> {
+          HttpResp res =  HTTP.get("http://localhost:9090/items?id=gt.2").execute();
+          expect(res.body()).toEqual("[{\"id\":3},{\"id\":4},{\"id\":5}]");
+          expect(res.code()).toEqual(200);
+        });
+
+        it("should filter with gte", () -> {
+          HttpResp res =  HTTP.get("http://localhost:9090/items?id=gte.2").execute();
+          expect(res.body()).toEqual("[{\"id\":2},{\"id\":3},{\"id\":4},{\"id\":5}]");
+          expect(res.code()).toEqual(200);
+        });
+
+        it("should filter with lt", () -> {
+          HttpResp res =  HTTP.get("http://localhost:9090/items?id=lt.3").execute();
+          expect(res.body()).toEqual("[{\"id\":1},{\"id\":2}]");
+          expect(res.code()).toEqual(200);
+        });
+
+        it("should filter with lte", () -> {
+          HttpResp res =  HTTP.get("http://localhost:9090/items?id=lte.3").execute();
+          expect(res.body()).toEqual("[{\"id\":1},{\"id\":2},{\"id\":3}]");
+          expect(res.code()).toEqual(200);
+        });
+
+        // Must use % urlencoded as %25
+        it("should filter with like", () -> {
+          HttpResp res =  HTTP.get("http://localhost:9090/projects?select=name&name=like.%25project%25").execute();
+          expect(res.body()).toEqual("[{\"name\":\"project 1\"},{\"name\":\"project 2\"},{\"name\":\"project 3\"},{\"name\":\"project 4\"}]");
+          expect(res.code()).toEqual(200);
+        });
+
+      });
     });
 
     describe("CALL rpc", () -> {

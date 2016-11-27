@@ -115,14 +115,15 @@ public class ApplicationServer {
 
             response.type(Structure.toMediaType(format));
 
-            if(queryParams.select.isLeft() || queryParams.order.isLeft()){
+            if(queryParams.select.isLeft() || queryParams.order.isLeft() || queryParams.filters.isLeft()){
               response.type("application/json");
               response.status(400);
-              return queryParams.select.isLeft()?queryParams.select.left().value():queryParams.order.left().value();
+              return queryParams.select.isLeft() ? queryParams.select.left().value() :
+                     queryParams.order.isLeft() ? queryParams.order.left().value() : queryParams.filters.left().value();
             }else if(!resource.isPresent()){
                 Either<Object, Object> result = queryExecuter.selectFrom(table,
-                        queryParams.filters, queryParams.select.right().value(), queryParams.order.right().value(), singular, format,
-                        getRole(secret, request, defaultRole));
+                        queryParams.filters.right().value(), queryParams.select.right().value(),
+                        queryParams.order.right().value(), singular, format, getRole(secret, request, defaultRole));
                 if(result.isRight()){
                     if(format == Structure.Format.XLSX){
                         response.header("Content-Disposition", "attachment");
@@ -239,7 +240,7 @@ public class ApplicationServer {
             if(parsedMap.isRight()){
               Parsers.QueryParams queryParams = new Parsers.QueryParams(request.queryMap());
               Either<Object, Object> result = queryExecuter.updateSet(request.params(":table"),
-                      parsedMap.right().value(), queryParams.filters, getRole(secret, request, defaultRole));
+                      parsedMap.right().value(), queryParams.filters.right().value(), getRole(secret, request, defaultRole));
               if(result.isRight()){
                   response.type("application/json");
                   response.status(200);
@@ -263,7 +264,7 @@ public class ApplicationServer {
 
             Parsers.QueryParams queryParams = new Parsers.QueryParams(request.queryMap());
             Either<Object, Object> result = queryExecuter.deleteFrom(request.params(":table"),
-                    queryParams.filters, getRole(secret, request, defaultRole));
+                    queryParams.filters.right().value(), getRole(secret, request, defaultRole));
             if(result.isRight()){
                 response.type("application/json");
                 response.status(200);
