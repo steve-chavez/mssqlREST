@@ -1,4 +1,3 @@
-
 import java.util.*;
 import java.sql.*;
 import org.junit.runner.notification.Failure;
@@ -14,6 +13,7 @@ public class MainTest{
   public static void main(String[] args){
     ApplicationServer.main(args);
     List<Class> tests = new ArrayList();
+    tests.add(CorsTest.class);
     tests.add(QueryTest.class);
 
     for (Class test : tests){

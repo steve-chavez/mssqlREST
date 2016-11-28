@@ -10,7 +10,6 @@ public class Configurator{
     String schema;
     Integer port;
     String defaultRole, secret;
-    Optional<String> origin;
     Optional<List<String>> jwtRoutines;
   }
 
@@ -27,7 +26,6 @@ public class Configurator{
       config.defaultRole = vals.get("defaultRole").toString();
       config.secret = vals.get("secret").toString();
       config.schema = (String)Optional.ofNullable(vals.get("schema")).orElse("dbo");
-      config.origin = Optional.ofNullable(vals.get("origin").toString());
       config.jwtRoutines = Optional.ofNullable((List<String>)vals.get("jwtRoutines"));
       return Optional.of(config);
     } catch (Exception e){

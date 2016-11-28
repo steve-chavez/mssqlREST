@@ -29,7 +29,7 @@ public class ApplicationServer {
         Optional<Configurator.Config> config = Configurator.fromYaml(args[0]);
 
         if(!config.isPresent()){
-          System.out.println("Config file doesn't exist or is an invalid YAML format");
+          System.out.println("Config file doesn't exist or is invalid");
           System.exit(0);
         }
 
@@ -46,45 +46,8 @@ public class ApplicationServer {
 
         String secret = config.get().secret;
 
-        Optional<String> optOrigin = config.get().origin;
-
         List<String> jwtRoutines = config.get().jwtRoutines
           .orElse(new ArrayList<String>());
-
-        // Headers:
-        // Plurality: singular, plural
-        // Resource : definition, data
-        Spark.before(new Filter() {
-            @Override
-            public void handle(Request request, Response response) {
-                if(optOrigin.isPresent()){
-                    response.header("Access-Control-Allow-Origin", optOrigin.get().toString());
-                    response.header("Access-Control-Allow-Credentials", "true");
-                }else
-                    response.header("Access-Control-Allow-Origin", "*");
-                response.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-                response.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Plurality, Resource");
-            }
-        });
-
-        //---------Pre flight---------
-        Spark.options("/", (request, response) -> {
-            System.out.println(request.requestMethod() + " : " + request.url());
-            response.status(200);
-            return "";
-        });
-
-        Spark.options("/:table", (request, response) -> {
-            System.out.println(request.requestMethod() + " : " + request.url());
-            response.status(200);
-            return "";
-        });
-
-        Spark.options("/rpc/:routine", (request, response) -> {
-            System.out.println(request.requestMethod() + " : " + request.url());
-            response.status(200);
-            return "";
-        });
 
         Spark.get("/", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
@@ -316,6 +279,43 @@ public class ApplicationServer {
                 response.status(400);
                 return Errors.messageToJson(parsedMap.left().value());
             }
+        });
+
+        // Headers:
+        // Plurality: singular, plural
+        // Resource : definition, data
+        //
+        // CORS headers
+        Spark.before(new Filter() {
+            @Override
+            public void handle(Request request, Response response) {
+              Optional<String> origin = Optional.ofNullable(request.headers("Origin"));
+              if(origin.isPresent()){
+                response.header("Access-Control-Allow-Origin", "*");
+                response.header("Access-Control-Allow-Credentials", "true");
+                response.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+                response.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Plurality, Resource");
+              }
+            }
+        });
+
+        // The following are needed for pre-flight requests
+        Spark.options("/", (request, response) -> {
+            System.out.println(request.requestMethod() + " : " + request.url());
+            response.status(200);
+            return "";
+        });
+
+        Spark.options("/:table", (request, response) -> {
+            System.out.println(request.requestMethod() + " : " + request.url());
+            response.status(200);
+            return "";
+        });
+
+        Spark.options("/rpc/:routine", (request, response) -> {
+            System.out.println(request.requestMethod() + " : " + request.url());
+            response.status(200);
+            return "";
         });
     }
 
