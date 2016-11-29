@@ -35,7 +35,6 @@ public class Parsers{
         try{
           return Either.right(gson.fromJson(body, new TypeToken<Map<String, String>>(){}.getType()));
         }catch(Exception e){
-          System.out.println(e.toString());
           return Either.left("Could not parse JSON object");
         }
       else
@@ -91,7 +90,6 @@ public class Parsers{
           }
           return Either.right(mappedValues);
       }catch(IOException ioe){
-          System.out.println(ioe.toString());
           return Either.left("Could not parse XLSX payload");
       }
   }
