@@ -128,7 +128,14 @@ public class QueryTest {
           expect(res.body()).toEqual("[{\"name\":\"project 1\"},{\"name\":\"project 2\"},{\"name\":\"project 3\"},{\"name\":\"project 4\"}]");
           expect(res.code()).toEqual(200);
         });
+      });
 
+      it("should get a single json object for Prefer: plurality=singular", () -> {
+        HttpResp res =  HTTP.get("http://localhost:9090/items?id=eq.1")
+          .header("Prefer", "plurality=singular")
+          .execute();
+        expect(res.body()).toEqual("{\"id\":1}");
+        expect(res.code()).toEqual(200);
       });
     });
 

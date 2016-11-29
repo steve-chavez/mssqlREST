@@ -83,9 +83,9 @@ public class ApplicationServer {
 
             Parsers.QueryParams queryParams = new Parsers.QueryParams(request.queryMap());
 
-            Optional<String> plurality = Optional.ofNullable(request.headers("Plurality"));
+            Optional<String> prefer = Optional.ofNullable(request.headers("Prefer"));
             Optional<String> accept = Optional.ofNullable(request.headers("Accept"));
-            Boolean singular = plurality.isPresent() && plurality.get().equals("singular");
+            Boolean singular = prefer.isPresent() && prefer.get().equals("plurality=singular");
 
             String table = request.params(":table");
             Structure.Format format = accept.map(x -> Structure.toFormat(x)).orElse(Structure.Format.JSON);
@@ -279,9 +279,6 @@ public class ApplicationServer {
             }
         });
 
-        // Headers:
-        // Plurality: singular, plural
-        //
         // CORS headers
         Spark.before(new Filter() {
             @Override
@@ -291,7 +288,7 @@ public class ApplicationServer {
                 response.header("Access-Control-Allow-Origin", "*");
                 response.header("Access-Control-Allow-Credentials", "true");
                 response.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-                response.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Plurality ");
+                response.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Prefer");
               }
             }
         });
