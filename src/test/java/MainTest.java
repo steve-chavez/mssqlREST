@@ -15,6 +15,7 @@ public class MainTest{
     List<Class> tests = new ArrayList();
     tests.add(CorsTest.class);
     tests.add(QueryTest.class);
+    tests.add(MetadataTest.class);
 
     for (Class test : tests){
       runTests(test);

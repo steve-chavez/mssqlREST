@@ -169,16 +169,21 @@ public class Parsers{
           return Either.left(Errors.messageToJson(e.toString()));
         }
       }
-
-      //Spark gets an array of query param values. This is because they consider this valid:
-      //`/table?select=val1&select=val2` and they get an array of `select` values.
-      //Just take the first value here.
-      private Map<String, String> normalizeMap(Map<String, String[]> map){
-          return map.entrySet().stream().collect(
-                  Collectors.toMap(
-                      Map.Entry::getKey, e -> e.getValue()[0]
-          ));
-      }
   }
 
+  //Only used for the root endpoint, to get `/?table=sometable`
+  public static Optional<String> tableQueryParam(QueryParamsMap map){
+    Map<String, String> normalized = normalizeMap(map.toMap());
+    return Optional.ofNullable(normalized.get("table"));
+  }
+
+  //Spark gets an array of query param values. This is because they consider this valid:
+  //`/table?select=val1&select=val2` and they get an array of `select` values.
+  //Just take the first value here.
+  private static Map<String, String> normalizeMap(Map<String, String[]> map){
+      return map.entrySet().stream().collect(
+              Collectors.toMap(
+                  Map.Entry::getKey, e -> e.getValue()[0]
+      ));
+  }
 }

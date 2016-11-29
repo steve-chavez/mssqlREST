@@ -51,15 +51,30 @@ public class ApplicationServer {
 
         Spark.get("/", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
-            Either<Object, Object> result = queryExecuter.selectAllPrivilegedTables(
-                    getRole(secret, request, defaultRole));
-            if(result.isRight()){
-                response.type("application/json");
-                response.status(200);
-                return result.right().value().toString();
+            Optional<String> tableQueryParam = Parsers.tableQueryParam(request.queryMap());
+            if(tableQueryParam.isPresent()){
+              Either<Object, Object> result = queryExecuter.selectTableMetaData(tableQueryParam.get(),
+                      getRole(secret, request, defaultRole));
+              if(result.isRight()){
+                  response.type("application/json");
+                  response.status(200);
+                  return result.right().value().toString();
+              }else{
+                  response.type("application/json");
+                  response.status(400);
+                  return result.left().value().toString();
+              }
             }else{
-                response.status(400);
-                return result.left().value().toString();
+              Either<Object, Object> result = queryExecuter.selectAllPrivilegedTables(
+                      getRole(secret, request, defaultRole));
+              if(result.isRight()){
+                  response.type("application/json");
+                  response.status(200);
+                  return result.right().value().toString();
+              }else{
+                  response.status(400);
+                  return result.left().value().toString();
+              }
             }
         });
 
@@ -68,7 +83,6 @@ public class ApplicationServer {
 
             Parsers.QueryParams queryParams = new Parsers.QueryParams(request.queryMap());
 
-            Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
             Optional<String> plurality = Optional.ofNullable(request.headers("Plurality"));
             Optional<String> accept = Optional.ofNullable(request.headers("Accept"));
             Boolean singular = plurality.isPresent() && plurality.get().equals("singular");
@@ -83,7 +97,7 @@ public class ApplicationServer {
               response.status(400);
               return queryParams.select.isLeft() ? queryParams.select.left().value() :
                      queryParams.order.isLeft() ? queryParams.order.left().value() : queryParams.filters.left().value();
-            }else if(!resource.isPresent()){
+            }else {
                 Either<Object, Object> result = queryExecuter.selectFrom(table,
                         queryParams.filters.right().value(), queryParams.select.right().value(),
                         queryParams.order.right().value(), singular, format, getRole(secret, request, defaultRole));
@@ -106,18 +120,6 @@ public class ApplicationServer {
                     response.status(400);
                     return result.left().value().toString();
                 }
-            }else{
-                Either<Object, Object> result = queryExecuter.selectTableMetaData(table,
-                        singular, getRole(secret, request, defaultRole));
-                if(result.isRight()){
-                    response.type("application/json");
-                    response.status(200);
-                    return result.right().value().toString();
-                }else{
-                    response.type("application/json");
-                    response.status(400);
-                    return result.left().value().toString();
-                }
             }
         });
 
@@ -125,7 +127,6 @@ public class ApplicationServer {
             System.out.println(request.requestMethod() + " : " + request.url());
 
             Optional<String> contentType = Optional.ofNullable(request.headers("Content-Type"));
-            Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
 
             Structure.Format format = contentType.map(x -> Structure.toFormat(x)).orElse(Structure.Format.JSON);
 
@@ -197,7 +198,6 @@ public class ApplicationServer {
 
         Spark.patch("/:table", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
-            Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
 
             Either<String, Map<String, String>> parsedMap = Parsers.jsonToMap(request.body());
             if(parsedMap.isRight()){
@@ -223,7 +223,6 @@ public class ApplicationServer {
 
         Spark.delete("/:table", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
-            Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
 
             Parsers.QueryParams queryParams = new Parsers.QueryParams(request.queryMap());
             Either<Object, Object> result = queryExecuter.deleteFrom(request.params(":table"),
@@ -241,7 +240,6 @@ public class ApplicationServer {
 
         Spark.post("/rpc/:routine", (request, response) -> {
             System.out.println(request.requestMethod() + " : " + request.url());
-            Optional<String> resource = Optional.ofNullable(request.headers("Resource"));
             Optional<String> accept = Optional.ofNullable(request.headers("Accept"));
 
             Structure.Format format = accept.map(x -> Structure.toFormat(x)).orElse(Structure.Format.JSON);
@@ -283,7 +281,6 @@ public class ApplicationServer {
 
         // Headers:
         // Plurality: singular, plural
-        // Resource : definition, data
         //
         // CORS headers
         Spark.before(new Filter() {
@@ -294,7 +291,7 @@ public class ApplicationServer {
                 response.header("Access-Control-Allow-Origin", "*");
                 response.header("Access-Control-Allow-Credentials", "true");
                 response.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-                response.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Plurality, Resource");
+                response.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Plurality ");
               }
             }
         });

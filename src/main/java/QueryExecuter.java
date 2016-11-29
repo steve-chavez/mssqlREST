@@ -18,7 +18,7 @@ public class QueryExecuter{
         this.ds = ds;
     }
 
-    public Either<Object, Object> selectTableMetaData(String tableName, Boolean singular, String role){
+    public Either<Object, Object> selectTableMetaData(String tableName, String role){
         try(Connection conn = this.ds.getConnection()){
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", role));
             String query =
@@ -34,7 +34,7 @@ public class QueryExecuter{
                 statement.setString(1, tableName);
                 statement.setString(2, this.schema);
                 ResultSet rs = statement.executeQuery();
-                result = ResultSetConverter.convert(rs, singular, Structure.Format.JSON, Optional.empty());
+                result = ResultSetConverter.convert(rs, false, Structure.Format.JSON, Optional.empty());
             } catch (SQLException e) {
                 result = Either.left(Errors.exceptionToJson(e));
             }
@@ -51,7 +51,7 @@ public class QueryExecuter{
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", role));
-            String query = "SELECT table_schema AS [schema], table_name AS name, " +
+            String query = "SELECT table_name AS [name], " +
                 "CONVERT(BIT, MAX(CASE WHEN privilege_type = 'SELECT' THEN 1 ELSE 0 END )) AS selectable,"+
                 " CONVERT(BIT, MAX(CASE WHEN privilege_type = 'INSERT' THEN 1 ELSE 0 END )) AS insertable,"+
                 " CONVERT(BIT, MAX(CASE WHEN privilege_type = 'UPDATE' THEN 1 ELSE 0 END )) AS updateable,"+
