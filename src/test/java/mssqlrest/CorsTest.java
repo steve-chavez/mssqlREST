@@ -1,3 +1,5 @@
+package mssqlrest;
+
 import org.rapidoid.http.*;
 import java.util.*;
 import static com.mscharhag.oleaster.runner.StaticRunnerSupport.*;

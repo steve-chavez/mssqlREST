@@ -1,3 +1,5 @@
+package mssqlrest;
+
 import java.util.*;
 import java.sql.*;
 import org.junit.runner.notification.Failure;

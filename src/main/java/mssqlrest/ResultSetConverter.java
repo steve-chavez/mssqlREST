@@ -1,3 +1,4 @@
+package mssqlrest;
 
 import com.univocity.parsers.common.processor.*;
 import com.univocity.parsers.conversions.*;
@@ -20,11 +21,13 @@ import java.io.*;
 
 import fj.data.Either;
 
+import static mssqlrest.Structure.*;
+
 public class ResultSetConverter {
 
   static final Gson gson = new GsonBuilder().disableHtmlEscaping().serializeNulls().create();
 
-  public static Either<Object, Object> convert(ResultSet rs, Boolean singular, Structure.Format format, Optional<Structure.Routine> routine)
+  public static Either<Object, Object> convert(ResultSet rs, Boolean singular, Format format, Optional<Routine> routine)
       throws SQLException {
 
       ResultSetMetaData rsmd = rs.getMetaData();
@@ -34,7 +37,7 @@ public class ResultSetConverter {
         case JSON: {
           if(routine.isPresent() && routine.get().isScalar()){
             rs.next();
-            return Either.right(getScalarValue(rs, Structure.toSqlType(routine.get().returnType)));
+            return Either.right(getScalarValue(rs, toSqlType(routine.get().returnType)));
           }
           else if(singular){
               Map<String, Object> map = new HashMap();
@@ -121,13 +124,13 @@ public class ResultSetConverter {
       }
   }
 
-  public static Either<Object, Object> convert(CallableStatement cs, Structure.Routine routine, Structure.Format format)
+  public static Either<Object, Object> convert(CallableStatement cs, Routine routine, Format format)
       throws SQLException {
-    if(format==Structure.Format.JSON){
+    if(format==Format.JSON){
       Map<String, Object> map = new HashMap<String, Object>();
-      for(Map.Entry<String, Structure.Parameter> entry : routine.parameters.entrySet())
+      for(Map.Entry<String, Parameter> entry : routine.parameters.entrySet())
           if(entry.getValue().isOut())
-              map.put(entry.getKey(), getParameterValue(cs, entry.getKey(), Structure.toSqlType(entry.getValue().dataType)));
+              map.put(entry.getKey(), getParameterValue(cs, entry.getKey(), toSqlType(entry.getValue().dataType)));
       return Either.right(gson.toJson(map));
     }else
       //TODO: Return 406 status code

@@ -1,14 +1,17 @@
+package mssqlrest;
 
 import java.util.*;
 import java.util.stream.*;
 
+import static mssqlrest.Structure.*;
+
 public class QueryBuilder{
 
     public static String selectQuery(
-            Structure.Table table,
-            Map<String, Structure.OperatorVal> filters,
+            Table table,
+            Map<String, OperatorVal> filters,
             List<String> select,
-            List<Structure.Order> order
+            List<Order> order
         ){
         StringBuilder builder = new StringBuilder("SELECT ");
 
@@ -30,7 +33,7 @@ public class QueryBuilder{
         return builder.toString();
     }
 
-    public static String insertQuery(Structure.Table table, Set<String> columns){
+    public static String insertQuery(Table table, Set<String> columns){
         StringBuilder builder = new StringBuilder("INSERT INTO ");
         builder.append(quoteName(table.schema) + "." + quoteName(table.name) + " ");
         if(!columns.isEmpty()){
@@ -47,9 +50,9 @@ public class QueryBuilder{
     }
 
     public static String updateQuery(
-            Structure.Table table,
+            Table table,
             Set<String> vals,
-            Map<String, Structure.OperatorVal> filters
+            Map<String, OperatorVal> filters
     ){
         StringBuilder builder = new StringBuilder("UPDATE ");
         builder.append(quoteName(table.schema) + "." + quoteName(table.name) + " ");
@@ -61,8 +64,8 @@ public class QueryBuilder{
     }
 
     public static String deleteQuery(
-            Structure.Table table,
-            Map<String, Structure.OperatorVal> filters
+            Table table,
+            Map<String, OperatorVal> filters
     ){
         StringBuilder builder = new StringBuilder("DELETE FROM ");
         builder.append(quoteName(table.schema) + "." + quoteName(table.name) + " ");
@@ -71,7 +74,7 @@ public class QueryBuilder{
         return builder.toString();
     }
 
-    public static String functionQuery(Structure.Routine routine){
+    public static String functionQuery(Routine routine){
         StringBuilder builder;
         if(routine.isFunction()){
             if(!routine.returnType.equals("TABLE"))
@@ -96,7 +99,7 @@ public class QueryBuilder{
         return builder.toString();
     }
 
-    private static String whereFragment(Map<String, Structure.OperatorVal> filters){
+    private static String whereFragment(Map<String, OperatorVal> filters){
       if(!filters.isEmpty())
         return " WHERE " + filters.entrySet().stream().map(e ->
             quoteName(e.getKey()) + " " + e.getValue().op.literal + " ?").collect(Collectors.joining(" AND "));

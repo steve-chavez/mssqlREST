@@ -1,0 +1,19 @@
+
+url: jdbc:sqlserver://localhost:1433;database=mssqlrest_test;
+## A cloud url should be something like
+## url: jdbc:sqlserver://rrhh.database.windows.net;database=RRHH;
+
+user: authenticator
+
+schema: api
+
+password: 2wsx!QAZ
+
+defaultRole: anonymous
+
+secret: munilavictoria
+
+port: 9090
+
+jwtRoutines :
+    - login

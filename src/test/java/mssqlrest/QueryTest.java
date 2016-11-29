@@ -1,3 +1,4 @@
+package mssqlrest;
 
 import org.rapidoid.http.*;
 import java.util.*;

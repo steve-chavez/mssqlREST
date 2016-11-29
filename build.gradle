@@ -35,7 +35,7 @@ dependencies {
 
 }
 
-mainClassName = "ApplicationServer"
+mainClassName = "mssqlrest.ApplicationServer"
 
 jar {
     manifest {
@@ -48,15 +48,15 @@ jar {
 }
 
 run {
-    systemProperty "file.encoding", "utf-8"
-    args "config-local.yml"
+  systemProperty "file.encoding", "utf-8"
+  args "src/test/resources/config.yml"
 }
 
 task test(type: JavaExec, overwrite: true) {
   classpath=sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
 
-  main = 'MainTest'
+  main = 'mssqlrest.MainTest'
 
-  args "config-local.yml"
+  args "src/test/resources/config.yml"
 }
 

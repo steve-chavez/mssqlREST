@@ -1,22 +1,24 @@
-
+package mssqlrest;
 
 import java.sql.*;
 import java.util.*;
 import java.io.*;
 import java.nio.charset.*;
 
+import static mssqlrest.Structure.*;
+
 public class StatementBuilder{
 
     public static PreparedStatement buildSelectPreparedStatement(
             Connection conn,
             String query,
-            Structure.Table table,
-            Map<String, Structure.OperatorVal> filters
+            Table table,
+            Map<String, OperatorVal> filters
     ) throws SQLException{
         PreparedStatement statement = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         Integer i = 1;
-        for (Map.Entry<String, Structure.OperatorVal> entry : filters.entrySet()) {
-          setValue(statement, i, Structure.toSqlType(table.columns.get(entry.getKey())), entry.getValue().val);
+        for (Map.Entry<String, OperatorVal> entry : filters.entrySet()) {
+          setValue(statement, i, toSqlType(table.columns.get(entry.getKey())), entry.getValue().val);
           i++;
         }
         return statement;
@@ -25,13 +27,13 @@ public class StatementBuilder{
     public static PreparedStatement buildInsertPreparedStatement(
             Connection conn,
             String query,
-            Structure.Table table,
+            Table table,
             Map<String, String> values
     ) throws SQLException{
         PreparedStatement statement = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         Integer i = 1;
         for (Map.Entry<String, String> entry : values.entrySet()) {
-          setValue(statement, i, Structure.toSqlType(table.columns.get(entry.getKey())), entry.getValue());
+          setValue(statement, i, toSqlType(table.columns.get(entry.getKey())), entry.getValue());
           i++;
         }
         return statement;
@@ -40,14 +42,14 @@ public class StatementBuilder{
     public static PreparedStatement buildBatchPreparedStatement(
             Connection conn,
             String query,
-            Structure.Table table,
+            Table table,
             List<Map<String, String>> valuesList
     ) throws SQLException{
         PreparedStatement statement = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         for(Map<String, String> values:valuesList){
             Integer i = 1;
             for (Map.Entry<String, String> entry : values.entrySet()) {
-              setValue(statement, i, Structure.toSqlType(table.columns.get(entry.getKey())), entry.getValue());
+              setValue(statement, i, toSqlType(table.columns.get(entry.getKey())), entry.getValue());
               i++;
             }
             statement.addBatch();
@@ -58,18 +60,18 @@ public class StatementBuilder{
     public static PreparedStatement buildUpdatePreparedStatement(
             Connection conn,
             String query,
-            Structure.Table table,
+            Table table,
             Map<String, String> values,
-            Map<String, Structure.OperatorVal> filters
+            Map<String, OperatorVal> filters
     ) throws SQLException{
         PreparedStatement statement = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
         Integer i = 1;
         for (Map.Entry<String, String> entry : values.entrySet()) {
-            setValue(statement, i, Structure.toSqlType(table.columns.get(entry.getKey())), entry.getValue());
+            setValue(statement, i, toSqlType(table.columns.get(entry.getKey())), entry.getValue());
             i++;
         }
-        for (Map.Entry<String, Structure.OperatorVal> entry : filters.entrySet()) {
-            setValue(statement, i, Structure.toSqlType(entry.getKey()), entry.getValue().val);
+        for (Map.Entry<String, OperatorVal> entry : filters.entrySet()) {
+            setValue(statement, i, toSqlType(entry.getKey()), entry.getValue().val);
             i++;
         }
         return statement;
@@ -78,19 +80,19 @@ public class StatementBuilder{
     public static CallableStatement buildCallableStatement(
             Connection conn,
             String query,
-            Structure.Routine routine,
+            Routine routine,
             Map<String, String> values
     ) throws SQLException{
         CallableStatement callableStatement = conn.prepareCall(query);
         for (Map.Entry<String, String> entry : values.entrySet()) {
-            Structure.Parameter parameter = routine.parameters.get(entry.getKey());
-            setValue(callableStatement, parameter.ordinalPosition, Structure.toSqlType(parameter.dataType), entry.getValue());
+            Parameter parameter = routine.parameters.get(entry.getKey());
+            setValue(callableStatement, parameter.ordinalPosition, toSqlType(parameter.dataType), entry.getValue());
         }
-        for (Map.Entry<String, Structure.Parameter> entry : routine.parameters.entrySet()) {
-            Structure.Parameter parameter = entry.getValue();
+        for (Map.Entry<String, Parameter> entry : routine.parameters.entrySet()) {
+            Parameter parameter = entry.getValue();
             if(parameter.isOut()){
               try{
-                callableStatement.registerOutParameter(parameter.ordinalPosition, Structure.toSqlType(parameter.dataType));
+                callableStatement.registerOutParameter(parameter.ordinalPosition, toSqlType(parameter.dataType));
               }catch(NumberFormatException nfe){
                 callableStatement.registerOutParameter(parameter.ordinalPosition, java.sql.Types.VARCHAR);
               }

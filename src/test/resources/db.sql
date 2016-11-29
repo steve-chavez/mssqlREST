@@ -1,13 +1,13 @@
-if db_id('xrest_test') is not null
-  drop database xrest_test
+if db_id('mssqlrest_test') is not null
+  drop database mssqlrest_test
 
 go
 
-create database xrest_test
+create database mssqlrest_test
 
 go
 
-use xrest_test
+use mssqlrest_test
 
 go
 

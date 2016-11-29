@@ -1,3 +1,4 @@
+package mssqlrest;
 
 import spark.*;
 
@@ -22,11 +23,13 @@ import static org.javafp.parsecj.Text.*;
 
 import org.slf4j.LoggerFactory;
 
+import static mssqlrest.Structure.*;
+
 public class ApplicationServer {
 
-  static final String COOKIE_NAME = "x-rest-jwt";
+  static final String COOKIE_NAME = "mssqlrest-jwt";
 
-  private static org.slf4j.Logger LOGGER = LoggerFactory.getLogger("x-rest");
+  private static org.slf4j.Logger LOGGER = LoggerFactory.getLogger(ApplicationServer.class);
 
   public static void main(String[] args){
 
@@ -92,9 +95,9 @@ public class ApplicationServer {
           Boolean singular = prefer.isPresent() && prefer.get().equals("plurality=singular");
 
           String table = request.params(":table");
-          Structure.Format format = accept.map(x -> Structure.toFormat(x)).orElse(Structure.Format.JSON);
+          Format format = accept.map(x -> toFormat(x)).orElse(Format.JSON);
 
-          response.type(Structure.toMediaType(format));
+          response.type(toMediaType(format));
 
           if(queryParams.select.isLeft() || queryParams.order.isLeft() || queryParams.filters.isLeft()){
             response.type("application/json");
@@ -106,7 +109,7 @@ public class ApplicationServer {
                       queryParams.filters.right().value(), queryParams.select.right().value(),
                       queryParams.order.right().value(), singular, format, getRole(secret, request, defaultRole));
               if(result.isRight()){
-                  if(format == Structure.Format.XLSX){
+                  if(format == Format.XLSX){
                       response.header("Content-Disposition", "attachment");
                       response.status(200);
                       HttpServletResponse raw = response.raw();
@@ -132,9 +135,9 @@ public class ApplicationServer {
 
           Optional<String> contentType = Optional.ofNullable(request.headers("Content-Type"));
 
-          Structure.Format format = contentType.map(x -> Structure.toFormat(x)).orElse(Structure.Format.JSON);
+          Format format = contentType.map(x -> toFormat(x)).orElse(Format.JSON);
 
-          response.type(Structure.toMediaType(format));
+          response.type(toMediaType(format));
 
           switch(format){
             case JSON: {
@@ -247,9 +250,9 @@ public class ApplicationServer {
 
           Optional<String> accept = Optional.ofNullable(request.headers("Accept"));
 
-          Structure.Format format = accept.map(x -> Structure.toFormat(x)).orElse(Structure.Format.JSON);
+          Format format = accept.map(x -> toFormat(x)).orElse(Format.JSON);
 
-          response.type(Structure.toMediaType(format));
+          response.type(toMediaType(format));
 
           Either<String, Map<String, String>> parsedMap = Parsers.jsonToMap(request.body());
           if(parsedMap.isRight()){
@@ -260,7 +263,7 @@ public class ApplicationServer {
                     return Jwts.builder()
                         .setPayload(result.right().value().toString())
                         .signWith(SignatureAlgorithm.HS256, secret).compact();
-                else if(format == Structure.Format.XLSX){
+                else if(format == Format.XLSX){
                     response.header("Content-Disposition", "attachment");
                     response.status(200);
                     HttpServletResponse raw = response.raw();

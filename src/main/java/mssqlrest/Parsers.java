@@ -1,3 +1,4 @@
+package mssqlrest;
 
 import java.io.*;
 import java.util.*;
@@ -24,6 +25,8 @@ import static org.javafp.parsecj.Combinators.*;
 import static org.javafp.parsecj.Text.*;
 
 import spark.QueryParamsMap;
+
+import static mssqlrest.Structure.*;
 
 public class Parsers{
 
@@ -97,8 +100,8 @@ public class Parsers{
   public static class QueryParams{
 
       public Either<String, List<String>> select;
-      public Either<String, List<Structure.Order>> order;
-      public Either<String, Map<String, Structure.OperatorVal>> filters;
+      public Either<String, List<Order>> order;
+      public Either<String, Map<String, OperatorVal>> filters;
 
       private final Parser<Character, String> any = regex(".*");
 
@@ -106,23 +109,23 @@ public class Parsers{
 
       private final Parser<Character, IList<String>> selectP = identifier.sepBy(chr(','));
 
-      private final Parser<Character, Optional<Structure.OrderDirection>> orderDirP =
+      private final Parser<Character, Optional<OrderDirection>> orderDirP =
         optionalOpt(choice(
-          attempt(string(".asc").then(retn(Structure.OrderDirection.ASC))),
-          attempt(string(".desc").then(retn(Structure.OrderDirection.DESC)))));
-      private final Parser<Character, Structure.Order> orderItemP = identifier.bind(item -> orderDirP.bind(dir -> retn(new Structure.Order(item, dir))));
-      private final Parser<Character, IList<Structure.Order>> orderP = orderItemP.sepBy1(chr(','));
+          attempt(string(".asc").then(retn(OrderDirection.ASC))),
+          attempt(string(".desc").then(retn(OrderDirection.DESC)))));
+      private final Parser<Character, Order> orderItemP = identifier.bind(item -> orderDirP.bind(dir -> retn(new Order(item, dir))));
+      private final Parser<Character, IList<Order>> orderP = orderItemP.sepBy1(chr(','));
 
-      private final Parser<Character, Structure.Operator> operator =
+      private final Parser<Character, Operator> operator =
         choice(
-          attempt(string("eq.").then(retn(Structure.Operator.EQ))),
-          attempt(string("gt.").then(retn(Structure.Operator.GT))),
-          attempt(string("gte.").then(retn(Structure.Operator.GTE))),
-          attempt(string("lt.").then(retn(Structure.Operator.LT))),
-          attempt(string("lte.").then(retn(Structure.Operator.LTE))),
-          attempt(string("neq.").then(retn(Structure.Operator.NEQ))),
-          attempt(string("like.").then(retn(Structure.Operator.LIKE))));
-      private final Parser<Character, Structure.OperatorVal> operatorVal = operator.bind(op -> any.bind(val -> retn(new Structure.OperatorVal(op, val))));
+          attempt(string("eq.").then(retn(Operator.EQ))),
+          attempt(string("gt.").then(retn(Operator.GT))),
+          attempt(string("gte.").then(retn(Operator.GTE))),
+          attempt(string("lt.").then(retn(Operator.LT))),
+          attempt(string("lte.").then(retn(Operator.LTE))),
+          attempt(string("neq.").then(retn(Operator.NEQ))),
+          attempt(string("like.").then(retn(Operator.LIKE))));
+      private final Parser<Character, OperatorVal> operatorVal = operator.bind(op -> any.bind(val -> retn(new OperatorVal(op, val))));
 
       public QueryParams(QueryParamsMap map){
         Map<String, String> normalized = normalizeMap(map.toMap());
@@ -142,7 +145,7 @@ public class Parsers{
           return Either.right(Collections.emptyList());
       }
 
-      private Either<String, List<Structure.Order>> parseOrder(Optional<String> val){
+      private Either<String, List<Order>> parseOrder(Optional<String> val){
         if(val.isPresent())
           try{
             return Either.right(IList.toList(orderP.parse(State.of(val.get())).getResult()));
@@ -153,12 +156,12 @@ public class Parsers{
           return Either.right(Collections.emptyList());
       }
 
-      private Either<String, Map<String, Structure.OperatorVal>> parseFilters(Map<String, String> map){
+      private Either<String, Map<String, OperatorVal>> parseFilters(Map<String, String> map){
         Map<String, String> filtersMap = map.entrySet().stream()
             .filter( x -> !x.getKey().equalsIgnoreCase("order")&&
                           !x.getKey().equalsIgnoreCase("select"))
             .collect(Collectors.toMap( x -> x.getKey(), x -> x.getValue()));
-        Map<String, Structure.OperatorVal> result = new HashMap();
+        Map<String, OperatorVal> result = new HashMap();
         try{
           for(Map.Entry<String, String> entry : filtersMap.entrySet())
             result.put(entry.getKey(), operatorVal.parse(State.of(entry.getValue())).getResult());

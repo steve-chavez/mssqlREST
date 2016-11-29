@@ -1,3 +1,4 @@
+package mssqlrest;
 
 import java.sql.*;
 import javax.sql.DataSource;
@@ -10,9 +11,11 @@ import fj.data.Either;
 
 import org.slf4j.LoggerFactory;
 
+import static mssqlrest.Structure.*;
+
 public class QueryExecuter{
 
-    private static org.slf4j.Logger LOGGER = LoggerFactory.getLogger("x-rest");
+    private static org.slf4j.Logger LOGGER = LoggerFactory.getLogger(QueryExecuter.class);
 
     private DataSource ds;
     private String schema;
@@ -38,7 +41,7 @@ public class QueryExecuter{
                 statement.setString(1, tableName);
                 statement.setString(2, this.schema);
                 ResultSet rs = statement.executeQuery();
-                result = ResultSetConverter.convert(rs, false, Structure.Format.JSON, Optional.empty());
+                result = ResultSetConverter.convert(rs, false, Format.JSON, Optional.empty());
             } catch (SQLException e) {
                 result = Either.left(Errors.exceptionToJson(e));
             }
@@ -68,7 +71,7 @@ public class QueryExecuter{
                 statement.setString(1, role);
                 statement.setString(2, this.schema);
                 ResultSet rs = statement.executeQuery();
-                result = ResultSetConverter.convert(rs, false, Structure.Format.JSON, Optional.empty());
+                result = ResultSetConverter.convert(rs, false, Format.JSON, Optional.empty());
             } catch (SQLException e) {
                 result = Either.left(Errors.exceptionToJson(e));
             }
@@ -81,22 +84,22 @@ public class QueryExecuter{
     }
 
     public Either<Object, Object> selectFrom(
-            String tableName, Map<String, Structure.OperatorVal> filters,
+            String tableName, Map<String, OperatorVal> filters,
             List<String> select,
-            List<Structure.Order> order,
+            List<Order> order,
             Boolean singular,
-            Structure.Format format,
+            Format format,
             String role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", role));
-            Optional<Structure.Table> optionalTable = getTableStructure(this.schema, tableName, conn);
+            Optional<Table> optionalTable = getTableStructure(this.schema, tableName, conn);
             if(!optionalTable.isPresent()){
                 conn.createStatement().execute("REVERT");
                 conn.commit();
                 return Either.left(Errors.missingError());
             }else{
-                Structure.Table table = optionalTable.get();
+                Table table = optionalTable.get();
                 String query = QueryBuilder.selectQuery(table,
                         filters,
                         select,
@@ -123,13 +126,13 @@ public class QueryExecuter{
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", role));
-            Optional<Structure.Table> optionalTable = getTableStructure(this.schema, tableName, conn);
+            Optional<Table> optionalTable = getTableStructure(this.schema, tableName, conn);
             if(!optionalTable.isPresent()){
                 conn.createStatement().execute("REVERT");
                 conn.commit();
                 return Either.left(Errors.missingError());
             }else{
-                Structure.Table table = optionalTable.get();
+                Table table = optionalTable.get();
                 String query = QueryBuilder.insertQuery(table, values.keySet());
                 LOGGER.info(query);
                 Either<Object, Object> result;
@@ -157,13 +160,13 @@ public class QueryExecuter{
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", role));
-            Optional<Structure.Table> optionalTable = getTableStructure(this.schema, tableName, conn);
+            Optional<Table> optionalTable = getTableStructure(this.schema, tableName, conn);
             if(!optionalTable.isPresent()){
                 conn.createStatement().execute("REVERT");
                 conn.commit();
                 return Either.left(Errors.missingError());
             }else{
-                Structure.Table table = optionalTable.get();
+                Table table = optionalTable.get();
                 String query = QueryBuilder.insertQuery(table, values.get(0).keySet());
                 LOGGER.info(query);
                 int[] inserts;
@@ -184,17 +187,17 @@ public class QueryExecuter{
         }
     }
 
-    public Either<Object, Object> updateSet(String tableName, Map<String, String> values, Map<String, Structure.OperatorVal> filters, String role){
+    public Either<Object, Object> updateSet(String tableName, Map<String, String> values, Map<String, OperatorVal> filters, String role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", role));
-            Optional<Structure.Table> optionalTable = getTableStructure(this.schema, tableName, conn);
+            Optional<Table> optionalTable = getTableStructure(this.schema, tableName, conn);
             if(!optionalTable.isPresent()){
                 conn.createStatement().execute("REVERT");
                 conn.commit();
                 return Either.left(Errors.missingError());
             }else{
-                Structure.Table table = optionalTable.get();
+                Table table = optionalTable.get();
                 String query = QueryBuilder.updateQuery(table, values.keySet(), filters);
                 LOGGER.info(query);
                 Either<Object, Object> result;
@@ -214,17 +217,17 @@ public class QueryExecuter{
         }
     }
 
-    public Either<Object, Object> deleteFrom(String tableName, Map<String, Structure.OperatorVal> filters, String role){
+    public Either<Object, Object> deleteFrom(String tableName, Map<String, OperatorVal> filters, String role){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", role));
-            Optional<Structure.Table> optionalTable = getTableStructure(this.schema, tableName, conn);
+            Optional<Table> optionalTable = getTableStructure(this.schema, tableName, conn);
             if(!optionalTable.isPresent()){
                 conn.createStatement().execute("REVERT");
                 conn.commit();
                 return Either.left(Errors.missingError());
             }else{
-                Structure.Table table = optionalTable.get();
+                Table table = optionalTable.get();
                 String query = QueryBuilder.deleteQuery(table, filters);
                 LOGGER.info(query);
                 Either<Object, Object> result;
@@ -247,20 +250,20 @@ public class QueryExecuter{
     public Either<Object, Object> callRoutine(
             String funcName,
             Map<String, String> values,
-            Structure.Format format,
+            Format format,
             Boolean singular,
             String role
         ){
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", role));
-            Optional<Structure.Routine> optionalRoutine = getRoutineStructure(this.schema, funcName, conn);
+            Optional<Routine> optionalRoutine = getRoutineStructure(this.schema, funcName, conn);
             if(!optionalRoutine.isPresent()){
                 conn.createStatement().execute("REVERT");
                 conn.commit();
                 return Either.left(Errors.missingError());
             }else{
-                Structure.Routine routine = optionalRoutine.get();
+                Routine routine = optionalRoutine.get();
                 String query = QueryBuilder.functionQuery(routine);
                 LOGGER.info(query);
                 Either<Object, Object> result;
@@ -287,7 +290,7 @@ public class QueryExecuter{
     }
 
 
-    private static Optional<Structure.Table> getTableStructure(String schema, String tableName, Connection conn) throws SQLException{
+    private static Optional<Table> getTableStructure(String schema, String tableName, Connection conn) throws SQLException{
         String query = "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = ? AND table_schema = ?";
         LOGGER.info(query);
         PreparedStatement statement = conn.prepareStatement(query);
@@ -295,7 +298,7 @@ public class QueryExecuter{
         statement.setString(2, schema);
         ResultSet rs = statement.executeQuery();
         if(rs.isBeforeFirst()){
-            Structure.Table table = new Structure.Table();
+            Table table = new Table();
             table.name = tableName;
             table.schema = schema;
             while(rs.next()){
@@ -307,8 +310,8 @@ public class QueryExecuter{
             return Optional.empty();
     }
 
-    private static Optional<Structure.Routine> getRoutineStructure(String schema, String routineName, Connection conn) throws SQLException{
-        Structure.Routine routine = new Structure.Routine();
+    private static Optional<Routine> getRoutineStructure(String schema, String routineName, Connection conn) throws SQLException{
+        Routine routine = new Routine();
         String query1 = "SELECT routine_name, routine_schema, routine_type, data_type AS return_type FROM information_schema.routines WHERE routine_name = ? AND routine_schema = ?";
         LOGGER.info(query1);
         PreparedStatement statement1 = conn.prepareStatement(query1);
@@ -332,7 +335,7 @@ public class QueryExecuter{
                 //SQL Server gets a parameter with ordinal_position of 0 to indicate return type
                 //this is redundant since it was previously obtained
                 if(rs2.getInt("ordinal_position") > 0){
-                    Structure.Parameter parameter = new Structure.Parameter();
+                    Parameter parameter = new Parameter();
                     parameter.name = rs2.getString("parameter_name").substring(1);
                     parameter.dataType = rs2.getString("data_type");
                     parameter.ordinalPosition = rs2.getInt("ordinal_position");
