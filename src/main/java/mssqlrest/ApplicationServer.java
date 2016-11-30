@@ -149,7 +149,7 @@ public class ApplicationServer {
 
           switch(format){
             case JSON: {
-              Either<String, Map<String, String>> parsedMap = Parsers.jsonToMap(request.body());
+              Either<String, Map<String, String>> parsedMap = Parsers.Body.jsonToMap(request.body());
               if(parsedMap.isRight()){
                 Either<Object, Object> result = queryExecuter.insertInto(request.params(":table"),
                         parsedMap.right().value(), getRole(secret, request, defaultRole));
@@ -168,7 +168,7 @@ public class ApplicationServer {
               }
             }
             case CSV: {
-              Either<String, List<Map<String, String>>> parsedMap = Parsers.csvToMap(request.body());
+              Either<String, List<Map<String, String>>> parsedMap = Parsers.Body.csvToMap(request.body());
               if(parsedMap.isRight()){
                   Either<Object, Object> result = queryExecuter.batchInsertInto(request.params(":table"),
                           parsedMap.right().value(), getRole(secret, request, defaultRole));
@@ -187,7 +187,7 @@ public class ApplicationServer {
               }
             }
             case XLSX: {
-              Either<String, List<Map<String, String>>> parsedMap = Parsers.xlsxToMap(request.raw());
+              Either<String, List<Map<String, String>>> parsedMap = Parsers.Body.xlsxToMap(request.raw());
               Either<Object, Object> result = queryExecuter.batchInsertInto(request.params(":table"),
                       parsedMap.right().value(), getRole(secret, request, defaultRole));
               if(parsedMap.isRight()){
@@ -214,7 +214,7 @@ public class ApplicationServer {
       Spark.patch("/:table", (request, response) -> {
           LOGGER.info(request.requestMethod() + ": " + request.url());
 
-          Either<String, Map<String, String>> parsedMap = Parsers.jsonToMap(request.body());
+          Either<String, Map<String, String>> parsedMap = Parsers.Body.jsonToMap(request.body());
           if(parsedMap.isRight()){
             Parsers.QueryParams queryParams = new Parsers.QueryParams(request.queryMap());
             Either<Object, Object> result = queryExecuter.updateSet(request.params(":table"),
@@ -262,7 +262,7 @@ public class ApplicationServer {
 
           response.type(toMediaType(format));
 
-          Either<String, Map<String, String>> parsedMap = Parsers.jsonToMap(request.body());
+          Either<String, Map<String, String>> parsedMap = Parsers.Body.jsonToMap(request.body());
           if(parsedMap.isRight()){
             Either<Object, Object> result = queryExecuter.callRoutine(request.params(":routine"),
                 parsedMap.right().value(), format, false, getRole(secret, request, defaultRole));
