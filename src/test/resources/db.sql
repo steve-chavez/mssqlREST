@@ -1,3 +1,4 @@
+
 if db_id('mssqlrest_test') is not null
   drop database mssqlrest_test
 

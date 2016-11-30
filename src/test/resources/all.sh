@@ -3,4 +3,5 @@
 
 ## So we use cat to produce a final sql file:
 cat src/test/resources/db.sql src/test/resources/roles.sql \
-    src/test/resources/schema.sql src/test/resources/privileges.sql > src/test/resources/all.sql
+    src/test/resources/auth.sql src/test/resources/api.sql \
+    src/test/resources/data.sql src/test/resources/privileges.sql > src/test/resources/all.sql

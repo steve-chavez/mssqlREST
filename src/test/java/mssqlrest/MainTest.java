@@ -18,6 +18,7 @@ public class MainTest{
     tests.add(CorsTest.class);
     tests.add(QueryTest.class);
     tests.add(MetadataTest.class);
+    tests.add(AuthTest.class);
 
     for (Class test : tests){
       runTests(test);

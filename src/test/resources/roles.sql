@@ -1,3 +1,4 @@
+
 if suser_id('authenticator') is not null
   drop login authenticator;
 
