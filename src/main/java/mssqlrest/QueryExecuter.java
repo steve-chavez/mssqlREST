@@ -1,3 +1,8 @@
+/*
+* Class that executes the SQL queries
+*
+* All of the queries are wrapped in a user impersonation context(EXEC AS USER='')
+*/
 package mssqlrest;
 
 import java.sql.*;
@@ -28,12 +33,7 @@ public class QueryExecuter{
     public Either<Object, Object> selectTableMetaData(String tableName, String role){
         try(Connection conn = this.ds.getConnection()){
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", role));
-            String query =
-              "SELECT CHARACTER_MAXIMUM_LENGTH AS max_length, COLUMN_DEFAULT AS [default], " +
-              "CONVERT(BIT, (CASE WHEN IS_NULLABLE = 'YES' THEN 1 ELSE 0 END)) AS nullable, " +
-              "COLUMN_NAME AS name, DATA_TYPE as type, " +
-              "NUMERIC_PRECISION AS precision, NUMERIC_SCALE AS scale " +
-              "FROM information_schema.columns WHERE table_name = ? AND table_schema = ?";
+            String query = QueryBuilder.tableMetaDataQuery();
             LOGGER.info(query);
             Either<Object, Object> result;
             try{
@@ -58,12 +58,7 @@ public class QueryExecuter{
         try(Connection conn = this.ds.getConnection()){
             conn.setAutoCommit(false);
             conn.createStatement().execute(String.format("EXEC AS USER='%s'", role));
-            String query = "SELECT table_name AS [name], " +
-                "CONVERT(BIT, MAX(CASE WHEN privilege_type = 'SELECT' THEN 1 ELSE 0 END )) AS selectable,"+
-                " CONVERT(BIT, MAX(CASE WHEN privilege_type = 'INSERT' THEN 1 ELSE 0 END )) AS insertable,"+
-                " CONVERT(BIT, MAX(CASE WHEN privilege_type = 'UPDATE' THEN 1 ELSE 0 END )) AS updateable,"+
-                " CONVERT(BIT, MAX(CASE WHEN privilege_type = 'DELETE' THEN 1 ELSE 0 END )) AS deletable"+
-                " FROM information_schema.table_privileges WHERE grantee = ? AND table_schema = ? GROUP BY table_schema,table_name";
+            String query = QueryBuilder.allPrivilegedTablesQuery();
             LOGGER.info(query);
             Either<Object, Object> result;
             try{

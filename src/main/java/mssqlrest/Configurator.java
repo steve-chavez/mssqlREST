@@ -1,3 +1,6 @@
+/*
+* Class that works with the config file
+*/
 package mssqlrest;
 
 import java.io.*;

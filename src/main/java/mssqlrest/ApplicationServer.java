@@ -1,3 +1,11 @@
+/*
+* Class that:
+*
+* - Reads the config file and starts the server
+* - Translates the client request to a SQL query
+* - Performs JWT signing on the config specified SQL routines
+* - Parses and validates the incomding JWT from the client
+*/
 package mssqlrest;
 
 import spark.*;

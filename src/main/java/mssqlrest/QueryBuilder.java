@@ -1,3 +1,8 @@
+/*
+* Class that builds the String SQL queries.
+*
+* All of the identifiers coming from the client are properly quoted with quoteName.
+*/
 package mssqlrest;
 
 import java.util.*;
@@ -6,6 +11,14 @@ import java.util.stream.*;
 import static mssqlrest.Structure.*;
 
 public class QueryBuilder{
+
+    //Does the same as `select quotename('something')`
+    //If 'something' contains ']', quotename replaces the ']' by ']]'. '[' is left as is.
+    //select quotename('some[thing]else')
+    //[some[thing]]else]
+    public static String quoteName(String s){
+      return "[" + s.replaceAll("]", "]]") + "]";
+    }
 
     public static String selectQuery(
             Table table,
@@ -107,12 +120,24 @@ public class QueryBuilder{
         return "";
     }
 
-    //Does the same as `select quotename('something')`
-    //If 'something' contains ']', quotename replaces the ']' by ']]'. '[' is left as is.
-    //select quotename('some[thing]else')
-    //[some[thing]]else]
-    public static String quoteName(String s){
-      return "[" + s.replaceAll("]", "]]") + "]";
+    public static String tableMetaDataQuery(){
+      return
+        "SELECT CHARACTER_MAXIMUM_LENGTH AS max_length, COLUMN_DEFAULT AS [default], " +
+        "CONVERT(BIT, (CASE WHEN IS_NULLABLE = 'YES' THEN 1 ELSE 0 END)) AS nullable, " +
+        "COLUMN_NAME AS name, DATA_TYPE as type, " +
+        "NUMERIC_PRECISION AS precision, NUMERIC_SCALE AS scale " +
+        "FROM information_schema.columns WHERE table_name = ? AND table_schema = ?";
+    }
+
+    public static String allPrivilegedTablesQuery(){
+      return
+        "SELECT table_name AS [name], " +
+        "CONVERT(BIT, MAX(CASE WHEN privilege_type = 'SELECT' THEN 1 ELSE 0 END )) AS selectable, "+
+        "CONVERT(BIT, MAX(CASE WHEN privilege_type = 'INSERT' THEN 1 ELSE 0 END )) AS insertable, "+
+        "CONVERT(BIT, MAX(CASE WHEN privilege_type = 'UPDATE' THEN 1 ELSE 0 END )) AS updateable, "+
+        "CONVERT(BIT, MAX(CASE WHEN privilege_type = 'DELETE' THEN 1 ELSE 0 END )) AS deletable "+
+        "FROM information_schema.table_privileges WHERE grantee = ? AND table_schema = ? GROUP BY table_schema,table_name";
+
     }
 
 }

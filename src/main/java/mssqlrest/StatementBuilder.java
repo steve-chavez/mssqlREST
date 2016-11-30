@@ -1,3 +1,8 @@
+/*
+* Class that builds prepared statements.
+*
+* It maps the http parsed body and query params to placeholders(?) with their proper type
+*/
 package mssqlrest;
 
 import java.sql.*;

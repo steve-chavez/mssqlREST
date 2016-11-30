@@ -1,3 +1,6 @@
+/*
+* Class that contains general error formatting
+*/
 package mssqlrest;
 
 import java.sql.*;

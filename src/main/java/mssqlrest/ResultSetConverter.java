@@ -1,3 +1,6 @@
+/*
+* Class that converts the ResultSet coming from SQLServer to different formats.
+*/
 package mssqlrest;
 
 import com.univocity.parsers.common.processor.*;

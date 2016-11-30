@@ -1,3 +1,9 @@
+/*
+* Class that parses:
+*
+* - The body of the http request from different formats to a map
+* - The http query parameters to internal classes
+*/
 package mssqlrest;
 
 import java.io.*;

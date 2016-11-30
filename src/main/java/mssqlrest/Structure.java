@@ -1,3 +1,9 @@
+/*
+* Class that contains:
+*
+* - General classes that have the structure of the database schema metadata.
+* - Utilitarians classes for working with http query parameters, media type, etc.
+*/
 package mssqlrest;
 
 import java.sql.*;
