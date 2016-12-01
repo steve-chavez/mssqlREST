@@ -1,3 +1,4 @@
+//TODO: XLSX is working but not tested - maybe test with xcellite
 package mssqlrest;
 
 import org.rapidoid.http.*;
@@ -85,7 +86,16 @@ public class QueryTest {
           expect(res.body()).toEqual("[{\"id\":4},{\"id\":3},{\"id\":2},{\"id\":1}]");
           expect(res.code()).toEqual(200);
         });
+
+        it("should respond with a CSV", () -> {
+          HttpResp res =  HTTP.get("http://localhost:9090/items")
+            .header("Accept", "text/csv")
+            .execute();
+          expect(res.body()).toEqual("id\n1\n2\n3\n4\n5\n");
+          expect(res.code()).toEqual(200);
+        });
       });
+
       describe("With filtering", () -> {
         it("should filter with eq", () -> {
           HttpResp res =  HTTP.get("http://localhost:9090/items?id=eq.1").execute();
@@ -165,7 +175,17 @@ public class QueryTest {
           expect(res.body()).toEqual("7");
           expect(res.code()).toEqual(200);
         });
+
+        it("should respond with a CSV on a FUNCTION that returns TABLE", () -> {
+          HttpResp res =  HTTP.post("http://localhost:9090/rpc/get_projects_lt")
+            .header("Accept", "text/csv")
+            .body("{\"id\": 3}".getBytes())
+            .execute();
+          expect(res.body()).toEqual("id,name\n1,project 1\n2,project 2\n");
+          expect(res.code()).toEqual(200);
+        });
       });
+
       describe("with a PROCEDURE", () -> {
         it("should respond with a JSON object of OUT parameters", () -> {
           HttpResp res =  HTTP.post("http://localhost:9090/rpc/mult_xyz_by")
