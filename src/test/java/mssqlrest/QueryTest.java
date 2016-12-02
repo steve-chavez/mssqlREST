@@ -1,4 +1,4 @@
-//TODO: XLSX is working but not tested - maybe test with xcellite
+//TODO: GET XLSX and POST XLSX are working but not they're tested - maybe test with xcellite
 package mssqlrest;
 
 import org.rapidoid.http.*;
@@ -150,13 +150,30 @@ public class QueryTest {
       });
     });
 
+    describe("PATCH", () -> {
+      it("should succeed when patching with json object", () -> {
+        HttpResp res =  HTTP.patch("http://localhost:9090/projects?id=eq.1")
+          .body("{'name': 'updated project 1'}".getBytes())
+          .execute();
+        expect(res.code()).toEqual(200);
+      });
+    });
+
+    describe("DELETE", () -> {
+      it("should succeed deleting", () -> {
+        HttpResp res =  HTTP.delete("http://localhost:9090/projects?id=eq.4")
+          .execute();
+        expect(res.code()).toEqual(200);
+      });
+    });
+
     describe("CALL rpc", () -> {
       describe("with a FUNCTION", () -> {
         it("should respond with a json array on a FUNCTION that returns TABLE", () -> {
           HttpResp res =  HTTP.post("http://localhost:9090/rpc/get_projects_lt")
-            .body("{\"id\": 4}".getBytes())
+            .body("{\"id\": 5}".getBytes())
             .execute();
-          expect(res.body()).toEqual("[{\"name\":\"project 1\",\"id\":1},{\"name\":\"project 2\",\"id\":2},{\"name\":\"project 3\",\"id\":3}]");
+          expect(res.body()).toEqual("[{\"name\":\"updated project 1\",\"id\":1},{\"name\":\"project 2\",\"id\":2},{\"name\":\"project 3\",\"id\":3}]");
           expect(res.code()).toEqual(200);
         });
 
@@ -181,7 +198,7 @@ public class QueryTest {
             .header("Accept", "text/csv")
             .body("{\"id\": 3}".getBytes())
             .execute();
-          expect(res.body()).toEqual("id,name\n1,project 1\n2,project 2\n");
+          expect(res.body()).toEqual("id,name\n1,updated project 1\n2,project 2\n");
           expect(res.code()).toEqual(200);
         });
       });
