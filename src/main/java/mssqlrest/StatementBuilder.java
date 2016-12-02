@@ -1,7 +1,7 @@
 /*
 * Class that builds prepared statements.
 *
-* It maps the http parsed body and query params to placeholders(?) with their proper type
+* It maps the http parsed body and query params to placeholders(?) positions with their proper type
 */
 package mssqlrest;
 

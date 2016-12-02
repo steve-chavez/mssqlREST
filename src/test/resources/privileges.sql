@@ -1,6 +1,8 @@
 
+-- grant all doesn't work on sql server
 grant select, insert, update, delete on api.items to anonymous
 grant select, insert, update, delete on api.projects to anonymous
+grant select                         on api.projects_view to anonymous
 grant select, insert, update, delete on api.entities to anonymous
 
 -- grant select on functions that return tables

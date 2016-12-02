@@ -16,7 +16,7 @@ public class MetadataTest {
       it("should return all tables and privileges", () -> {
         HttpResp res =  HTTP.get("http://localhost:9090/").execute();
         expect(res.code()).toEqual(200);
-        expect(res.body()).toEqual("[{\"updateable\":true,\"selectable\":true,\"name\":\"entities\",\"deletable\":true,\"insertable\":true},{\"updateable\":true,\"selectable\":true,\"name\":\"items\",\"deletable\":true,\"insertable\":true},{\"updateable\":true,\"selectable\":true,\"name\":\"projects\",\"deletable\":true,\"insertable\":true}]");
+        expect(res.body()).toEqual("[{\"updateable\":true,\"selectable\":true,\"name\":\"entities\",\"deletable\":true,\"insertable\":true},{\"updateable\":true,\"selectable\":true,\"name\":\"items\",\"deletable\":true,\"insertable\":true},{\"updateable\":true,\"selectable\":true,\"name\":\"projects\",\"deletable\":true,\"insertable\":true},{\"updateable\":false,\"selectable\":true,\"name\":\"projects_view\",\"deletable\":false,\"insertable\":false}]");
       });
 
       it("should return a table columns data at /?table=<name>", () -> {

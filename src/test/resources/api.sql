@@ -15,6 +15,10 @@ create table api.projects (
 )
 go
 
+create view api.projects_view as
+select id, name from api.projects
+go
+
 create function api.get_projects_lt(@id int)
 returns table
 as

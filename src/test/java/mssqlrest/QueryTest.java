@@ -148,6 +148,12 @@ public class QueryTest {
         expect(res.body()).toEqual("{\"id\":1}");
         expect(res.code()).toEqual(200);
       });
+
+      it("should work for a VIEW", () -> {
+        HttpResp res =  HTTP.get("http://localhost:9090/projects_view?select=name&id=lt.3").execute();
+        expect(res.body()).toEqual("[{\"name\":\"project 1\"},{\"name\":\"project 2\"}]");
+        expect(res.code()).toEqual(200);
+      });
     });
 
     describe("PATCH", () -> {

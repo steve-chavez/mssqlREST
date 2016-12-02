@@ -24,11 +24,6 @@ import fj.data.Either;
 import java.io.*;
 import java.nio.file.*;
 
-import org.javafp.parsecj.*;
-import org.javafp.data.*;
-import static org.javafp.parsecj.Combinators.*;
-import static org.javafp.parsecj.Text.*;
-
 import org.slf4j.LoggerFactory;
 
 import static mssqlrest.Structure.*;
