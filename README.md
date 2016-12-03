@@ -26,22 +26,17 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
  - [x] Support for Cookie authorization.
  - [x] Support for GET with BINARY Content-Type for a query with one column.
 
-## Improvements
-
- - [ ] Improve query parameter mapping to table value in
-       PATCH and DELETE methods(Don't program by accident).
-
 ## Problems to solve
 
  - [x] Find a way to convert a ResultSet to JSON without a one-to-one mapping of table to object.
  - [x] Find a safe way to construct queries invulnerable to sql injections(Maybe SQLBuilder or Squiggle).
  - [x] Integrate library for connection pooling.
  - [x] Use transactions.
- - [ ] Develop postgrest compliant http methods and querystrings(Which library?).
- - [ ] Consistent error messages for formating exceptions(Check what postgrest does for this).
- - [ ] Consistent http success codes(Check what postgrest does for this).
- - [ ] Consistent http error codes(Check what postgrest does for this).
- - [ ] Consistent errors for not having privilege to access routines(Check what postgrest does for this).
+ - [x] Develop postgrest compliant http methods and querystrings(Which library?). ParsecJ
+ - [x] Consistent error messages for formating exceptions(Check what postgrest does for this).
+ - [x] Consistent http success codes(Check what postgrest does for this).
+ - [x] Consistent http error codes(Check what postgrest does for this).
+ - [x] Consistent errors for not having privilege to access routines(Check what postgrest does for this).
 
 ## Notes
 
@@ -83,35 +78,3 @@ This is a proof of concept for doing a http interface for any RDBMS(currently SQ
 GRANT SELECT,INSERT,UPDATE,DELETE ON SCHEMA::dbo TO UserName
 
 exec sp_addrolemember 'db_owner', 'UserName'
-
-## Pending bugs
-
-When Bearer is appended without space to the token.
-java.util.NoSuchElementException: No value present
-        at java.util.Optional.get(Optional.java:135)
-        at ApplicationServer.getRoleFromCookieOrHeader(ApplicationServer.java:128)
-        at ApplicationServer.lambda$main$13(ApplicationServer.java:277)
-        at spark.RouteImpl$1.handle(RouteImpl.java:58)
-        at spark.webserver.MatcherFilter.doFilter(MatcherFilter.java:162)
-        at spark.webserver.JettyHandler.doHandle(JettyHandler.java:61)
-        at org.eclipse.jetty.server.session.SessionHandler.doScope(SessionHandler.java:189)
-        at org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)
-        at org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:119)
-        at org.eclipse.jetty.server.Server.handle(Server.java:517)
-        at org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:302)
-        at org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:242)
-        at org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:245)
-        at org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:95)
-        at org.eclipse.jetty.io.SelectChannelEndPoint$2.run(SelectChannelEndPoint.java:75)
-        at org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume.produceAndRun(ExecuteProduceConsume.java:213)
-        at org.eclipse.jetty.util.thread.strategy.ExecuteProduceConsume.run(ExecuteProduceConsume.java:147)
-        at org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:654)
-        at org.eclipse.jetty.util.thread.QueuedThreadPool$3.run(QueuedThreadPool.java:572)
-        at java.lang.Thread.run(Thread.java:745)
-
-
-Hikari error, better include the driver name
-ds.setDriverClassName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-[qtp834300090-19] INFO com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Started.
-Failed to get driver instance for jdbcUrl=jdbc:sqlserver://rrhh.database.windows.net;database=RRHH;
-
