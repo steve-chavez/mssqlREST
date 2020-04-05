@@ -2,6 +2,13 @@
 
 ## Quickstart
 
+Clone this repo and cd into it:
+
+```bash
+git clone https://github.com/steve-chavez/mssqlREST
+cd mssqlREST
+```
+
 Run SQL Server in Docker:
 
 ```bash
