@@ -62,6 +62,8 @@ id          name
 Download the [release](https://github.com/steve-chavez/mssqlrest/releases) and execute it using the sample config:
 
 ```bash
+wget https://github.com/steve-chavez/mssqlREST/releases/download/v1.0.0/mssqlREST.jar
+
 java -jar mssqlREST.jar src/test/resources/config.yml
 
 [Thread-0] INFO org.eclipse.jetty.util.log - Logging initialized @709ms
